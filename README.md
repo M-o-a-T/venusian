@@ -46,19 +46,25 @@ The Venus system does *not* run inside a chroot environment, container, or whate
 
 ### OpenEmbedded libraries
 
-Venus binaries use `/lib/ld-linux-armhf.so.3` as its ELF loader. The Venusian
-assumes that your host system is not an `armhf` system (Raspberry Pi 3 and
-4 run in 64-bit mode under Debian) and thus doesn't need to run any other
-`armhf` binaries.
+Venus binaries is an `armhf` system and thus uses
+`/lib/ld-linux-armhf.so.3` as its ELF loader.
+
+The Venusian assumes that its host is not an `armhf` system (Raspberry Pi 3
+and 4 run in 64-bit mode under Debian) and thus doesn't need to run any
+other `armhf` binaries.
 
 The Venusian hijacks this loader by patching the `/lib` and `/usr/lib`
 strings that define its library search path, to `/v/l/` and `/v/u/lib`
 respectively. Appropriate symlinks then ensure that the Venus binaries use
 Venus libraries.
 
+#### Alternate solution
 
-Alternately, we could binary-patch all required Venus binaries so they use our
-patched loader. (Feel free to supply a patch.)
+If you do need to run non-Venus `armhf` binaries, we could alternately
+patch all Venus binaries so they use a patched loader that's located
+somewhere else.
+
+Feel free to supply a script that does this.
 
 ### Venusian user
 
@@ -117,7 +123,8 @@ Details are TBD, TODO, and all that.
 The `install` script copies a current Venus image to a subvolume or
 subdirectory of the host system and optionally customizes it.
 
-The script requires a couple of arguments.
+The script accepts a couple of arguments. `dir`, `root` and `mount` are
+mandatory.
 
 ### --image=/path/to/venus.img
 
@@ -205,10 +212,36 @@ hacked-up copy of the armhf ELF loader. You could use this to implement the
 * LIBV: /var/lib/venus (the Victron user's home directory)
 * USRV: /usr/lib/venusian (common helper files and scripts)
 * SUBS: array of scriptlets to run
+* OVER: the overlay file system
+* FORCE: unconditionally replace things
 
 Remember that all of these may contain spaces or other special characters.
 While we recommend not to do that, it's still good practice to quote
 **all** uses of these variables.
+
+#### Overlay file system
+
+The installer may or may not create a complete copy of
+`/opt/victronenergy`, the directory where Victron (sensibly) ships its code
+in. In any case, `$OVER` contains the path to the destination file system,
+which commonly is `$R/var/lib/venus/opt`.
+
+Thus, a test whether to replace a file with its patched copy succeeds if
+any of
+
+* `$FORCE` is set
+* the destination doesn't exist
+* source and destination are the same file
+* the source is newer
+
+It should always `rm -f` the destination and `mkdir -p` any intermediate
+directories.
+
+The helper function `fchg ‹source› ‹dest›` does this for you. It exits with
+return code 1 if you don't need to do anything. Otherwise the destination
+is a new empty file.
+
+`fchg_e` does the same thing, except that it sets the destination's executable bits.
 
 ## Changes to the host system
 
@@ -216,6 +249,7 @@ This section broadly documents the install script's changes to the host filesyst
 
 * create and populate $V (350 MBytes; small image as of 2024-01)
 * create a user and group "venusian"
+* mount its overlay file system at `/opt/victronenergy`
 * populate its home directory in $LIBV
 * create a patched `/lib/ld-linux-armhf.so.3`
 * create a directory `/v` (with library symlinks, for the loader)

@@ -48,6 +48,38 @@ subs() {
     done
 }
 
+_chg() {
+    # check: do we replace DST?
+    SRC="$1"
+    DST="$2"
+    test -n "$FORCE" && return 0
+    test -f "$DST" || return 0
+    test "$SRC" -ef "$DST" && return 0
+    test "$SRC" -nt "$DST" && return 0
+    return 1
+}
+
+fchg() {
+    # replace DST?
+    SRC="$1"
+    DST="$2"
+    _chg "$SRC" "$DST" || return 1
+    rm -f "$DST"
+    mkdir -p "$(dirname "$DST")"
+    touch "$DST"
+    return 0
+}
+
+fchg_e() {
+    # replace DST? (executable)
+    SRC="$1"
+    DST="$2"
+    fchg "$SRC" "$DST" || return 1
+    chmod 755 "$DST"
+    return 0
+}
+
+
 # command line processing
 TEMP=$(getopt -o 'fi:d:hr:m:qs:v' --long 'help,force,image:,dir:,root:,mount:,sub:,verbose' -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
