@@ -8,10 +8,8 @@ Usage: $0
     --image A --dir B --root C --mount D
 
         '--dir' and '--root' are mandatory.
-        If '--image' is used, unpack/update image A to directory B.
-        Then, adapt B.
-        Also, modify system root C
-        The mountpoint of B on C shall be D.
+        If '--image' is used, unpack/update the Venus image A to directory B.
+        Next, modify the system at root C. The mountpoint of B on C shall be D.
 
     --verbose
         Print the steps the script executes.
@@ -30,6 +28,7 @@ _
     ls install.d
     exit 1
 }
+
 
 apti() {
    R="$1"
@@ -159,8 +158,8 @@ if [ ! -v dir ] ; then
 fi
 
 if test "$verb" = "y" ; then
-    set -x
     Q=":"
+    set -x
 fi
 
 temp=$(mktemp -d)
