@@ -1,0 +1,462 @@
+#!/bin/bash
+
+set -u
+
+usage() {
+    cat <<_
+Usage: $0 --image A --dir B --root C --mount D --verbose|--quiet
+    '--dir' and '--root' are mandatory.
+    If '--image' is used, unpack/update image A to directory B.
+    Then, adapt B.
+    Also, modify system root C
+    The mountpoint of B on C shall be D.
+
+    B, C and D can be given as arguments.
+
+    Available additions:
+_
+    ls install.d
+    exit 1
+}
+
+apti() {
+   R="$1"
+   shift
+   $Q echo Installing $@
+   systemd-nspawn -D "$R" apt-get install --yes --no-install-recommends -o Dpkg::Options::="--force-confdef" "$@" </dev/tty >/dev/tty 2>&1
+}
+
+subs() {
+    W="$1"
+    for S in "${SUB[@]}" ; do
+        if test -f "install.d/$S/$W" ; then
+            $Q echo Processing "$S/$W"
+            source "install.d/$S/$W"
+        fi
+    done
+}
+
+# command line processing
+TEMP=$(getopt -o 'i:d:hr:m:vq' --long 'help,image:,dir:,root:,mount:,verbose' -n "$0" -- "$@")
+if [ $? -ne 0 ]; then
+    usage >&2
+fi
+
+set -e
+eval set -- "$TEMP"
+unset TEMP
+
+HERE="$(/bin/pwd)"
+
+Q=
+verb=n
+
+while : ; do
+    case "$1" in
+        (-h|--help)
+            usage;
+            exit 0 ;;
+        (-q|--quiet)
+            Q=":"
+            shift ;;
+        (-v|--verbose)
+            verb=y
+            shift ;;
+        (-d|--dir)
+            cd "$2"
+            dir="$2"
+            shift 2 ;;
+        (-i|--img)
+            img="$2"
+            shift 2 ;;
+        (-r|--root)
+            root="$2"
+            shift 2 ;;
+        (-m|--mount)
+            mnt="$2"
+            shift 2 ;;
+        (--)
+            shift; break ;;
+        (*)
+            echo "Internal error! '$1'" >&2
+            exit 1
+    esac
+done
+
+if [ ! -v dir ] && [ $# -gt 0 ] ; then
+    dir="$1"
+    shift
+fi
+if [ ! -v root ] && [ $# -gt 0 ] ; then
+    root="$1"
+    shift
+fi
+if [ ! -v mnt ] && [ $# -gt 0 ] ; then
+    mnt="$1"
+    shift
+fi
+
+SUB=()
+for d in "$@" ; do
+    if test -d "install.d/$d" ; then 
+        SUB+=("$d")
+    else
+        echo "Unknown argument ('$d'). Exiting." >&2
+    fi
+done
+
+if [ ! -v dir ] ; then
+    echo "A destination directory (-d …) is required" >&2
+    exit 1
+fi
+
+if test "$verb" = "y" ; then
+    set -x
+    Q=":"
+fi
+
+
+################# install local requirements
+I=""
+which crudini >/dev/null 2>&1 || I="$I crudini"
+if test -n "$I" ; then
+    $Q echo Locally installing $@
+    apt install $I
+fi
+
+
+################# COPY
+if [ ! -v img ] ; then
+    $Q echo "No image given; not copying."
+else
+$Q echo Copying image
+
+if test "$#" != 2 || test ! -s "$1" ; then
+    echo "Usage: $0 IMAGE DEST" >&2
+    echo "  directory DEST must be empty"
+    exit 1
+fi
+d="$2"
+if test -d "$d" ; then
+   :
+else
+   btrfs subvol cre "$d" || mkdir "$d"
+fi
+
+# if the image is compressed, unpack it
+imgz="$1"
+img="${imgz%.gz}"
+if [ "$img" != "$imgz" ] ; then
+   img="$t/${img##*/}"
+   gzip -d < "$imgz" > "$img"
+fi
+
+t=$(mktemp -d)
+trap 'rm -r $t' 0 1 2 15
+
+mkdir $t/dir
+ld=$(losetup -f --show -P "$img")
+trap 'losetup -d $ld; rm -r $t' 0 1 2 15
+
+mount ${ld}p2 $t/dir
+trap 'umount $t/dir; losetup -d $ld; rm -r $t' 0 1 2 15
+
+rsync -a --numeric-ids --perms --inplace "$t/dir/." "$d/."
+echo "Copy/sync finished."
+trap "" 0 1 2 15
+
+umount $t/dir; losetup -d $ld; rm -r $t
+fi
+################# END COPY
+
+
+################# SETUP
+cd "$root"
+R=$(pwd)
+cd "$HERE"
+cd "$dir"
+V=$(pwd)
+t=$(mktemp -d)
+trap 'rm -r $t' 0 1 2 15
+cd $t
+umask 022
+
+subs pre
+
+# create user
+grep -qs "^venus:" "$R/etc/group" || chroot "$R" /sbin/addgroup --system venus
+grep -qs "^venus:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home /var/lib/venus --ingroup venus --system --comment "Venus System User" venus
+chroot "$R" /sbin/adduser venus systemd-journal
+chroot "$R" /sbin/adduser venus bluetooth
+
+# systemd
+SP="/var/lib/venus/.config/systemd/user"
+SY="${R}${SP}"
+mkdir -p "$SY"
+
+# set up DBUS permissions
+for f in "$V/etc/dbus-1/system.d"/* ; do
+    g="$R/etc/dbus-1/system.d/${f##*/}"
+    test -s "$g" || \
+    sed <"$f" >"$g"  -e 's/"root"/"venus"/'
+done
+
+mkdir -p "$R/opt/venus/"{bin,startup}
+
+$Q echo Checking startup scripts
+
+( ls "$V/etc/rcS.d"; ls "$V/etc/rc5.d") | while read f ; do
+    f="${f%.sh}"
+    case "$f" in
+        ### Startup scripts, rcS.d
+        (S01keymap) ;; # host OS
+        (S02sysfs) ;; # mounts a bunch of directories; host OS
+        (S02zzz-resize-sdcard) ;; # host OS
+        (S03mountall) ;; # host OS
+        (S03test-data-partition) ;; # host problem
+        (S04udev) ;; # host
+        (S05modutils) ;; # host
+        (S06alignment) ;; # host; mode 3 for alignment fixes (repair+complain)
+        (S06checkroot) ;; # host
+        (S06devpts) ;; # host
+        (S07bootlogd) ;; # journal
+        (S10overlays) ;; # done later
+        (S20static-nodes) ;; # systemd
+        (S29read-only-rootfs-hook) ;; # volatile /var/lib
+        (S36bootmisc) ;; # various system stuff
+        (S37populate-volatile)
+            # systemd
+            # TODO set up /data
+            ;;
+        (S38dmesg) ;; # journald
+        (S38urandom) ;; # random seed. Host.
+        (S39hostname) ;; # host
+        (S40read-eeprom) ;; # we don't have that
+        (S50iptables) ;; # host
+        (S80watchdog) ;; # possible TODO
+        (S90gpio_pins) ;; # empty list
+        (S90machine-conf) ;; # not on RPi
+        (S99custom-rc-early)
+            # runs /data/rcS.local
+            # possible TODO
+            ;;
+
+### Startup scripts, rc5.d
+        (S01networking) ;; # systemd-networkd or whatever
+        (S02dbus-1) ;; # in base system
+        (S09haveged) ;; # obsolete since kernel 5.6
+        (S15mountnfs) ;; # system
+        (S20apmd) ;; # not applicable on Raspberry Pi
+        (S20bluetooth) ;; # host system
+        (S20dnsmasq) ;; # host system
+        (S20syslog) ;; # host system
+        (S21avahi-daemon)
+            ## host system, but ...
+            mkdir -p "$R/etc/avahi"
+            if test ! -f "$R/etc/avahi/avahi-daemon.conf" ; then
+                $Q echo Installing avahi-daemon
+                apti "$R" avahi-daemon
+            fi
+            sed -i -e s/^use-iff-running=/use-iff-running=yes/ "$R/etc/avahi/avahi-daemon.conf"
+
+            ## TODO Garmin service file?
+            ;;
+
+        (S30update-data) ;; # TODO automatic data update
+        (S60php-fpm) ;; # possibly some TODO or other
+        (S70connman) ;; # host problem
+        (S70swupdate) ;; # empty
+        (S75avahi-autoipd) ;; # host problem
+        (S80resolv-watch) ;; # systemd-resolved or some other host program
+        (S82report-data-failure)
+            # get-unique-id is hard-coded to eth0, which may not even exist
+            test -s "$R/opt/venus/bin/get-unique-id" || \
+            cat >>"$R/opt/venus/bin/get-unique-id" <<'_'
+#!/bin/sh
+
+cat /etc/machine-id
+_
+            chmod +x "$R/opt/venus/bin/get-unique-id"
+            test -L "$R/sbin/get-unique-id" || ln -s /opt/venus/bin/get-unique-id "$R/sbin/get-unique-id"
+            # other than that we do nothing
+            # local file system monitoring is not a Venus problem
+            ;;
+
+        (S90crond)
+            ## host OS
+            # one builtin cron script, which does automated software updates,
+            # which we don't do
+            ;;
+
+        (S95svscanboot)
+            # SVC
+            # TODO convert to systemd
+            ;;
+        (S98scan-versions) ;; # alternate root file systems
+        (S99check-updates) ;; # system update check
+        (S99custom-rc-late)
+            # run /data/rc.local
+            # possible TODO
+            ;;
+        (S99rmnologin) ;; # systemd
+        (S99stop-bootlogd) ;; # journald
+
+        (*)
+            echo "UNKNOWN startup script: $sc" >&2
+            exit 1 ;;
+    esac
+
+done
+
+
+################# Services
+
+T="$SY/default.target.wants"
+CR="crudini --ini-options=nospace --set"
+$Q echo Converting services
+mkdir -p "$T"
+ls "$V/opt/victronenergy/service/" | while read f ; do
+    fx="${f##*/}"
+    g="$SY/$fx.service"
+    case "$fx" in 
+        (ppp) continue ;; # Of course not.
+        (llmnrd) continue ;; # Not that either.
+        (simple-upnpd) continue ;; # no
+        (netmon) continue ;; # avahi restart on network change
+        (nginx) continue ;; # TODO teach the host OS
+        (serial-starter) continue ;; # TODO adapt to host OS
+        (dbus-digitalinputs) continue ;; # TODO?
+        (dbus-qwacs) continue ;; # ?
+        (dbus-fronius) continue ;; # ?
+        (dbus-adc) continue ;; # ?
+        (venus-html5-logger) continue ;; # what for?
+        (gui)
+            $CR "$g" Service ExecStart /opt/venus/startup/$fx
+            sed -e 's#-f /etc/venus/headless#-e /dev/null#' \
+                -e 's/mouse=-nomouse/mouse=-mouse/ '\
+                < "$V/opt/victronenergy/gui/start-gui.sh" > "$R/opt/venus/startup/$fx"
+            chmod +x "$R/opt/venus/startup/$fx"
+            ;;
+        (*)
+            $CR "$g" Service ExecStart /opt/victronenergy/service/$fx/run
+            ;;
+    esac
+    $CR "$g" Service Type simple
+    $CR "$g" Service Restart always
+    $CR "$g" Service RestartSec 10
+    test -L "$T/$fx.service" || ln -s "$SP/$fx.service" "$T/$fx.service"
+done
+
+
+################# ELF starter
+
+LA="$V/lib/ld-2.31.so"
+LB="$R/lib/ld-linux-armhf.so.3"
+if test ! -s "$LB" || test "$LA" -nt "$LB" ; then
+    # need to hack
+    $Q echo Patching ld-linux-armhf
+    sed -e 's#/lib/#/v/l/#' -e 's#/usr/lib/#/v/u/lib/#' < "$LA" > "$LB.n"
+    if test $(stat --format %s "$LA") -ne $(stat --format %s "$LA") ; then
+        echo Patching $LA to $LB did not work
+        exit 1
+    fi
+    mv "$LB.n" "$LB"
+    touch -r "$LA" "$LB"
+fi
+
+################# random directories and links
+$Q echo Checking symlinks
+mkdir -p "$R/var/lib/venus/"{conf,db,log,etc,themes,var/lib}
+chroot "$R" chown venus /var/lib/venus/{conf,db,log}
+
+test -L "$R/l" || ln -s "$mnt/lib" "$R/l"
+test -L "$V/usr/l" || ln -s "lib" "$V/usr/l"
+test -L "$R/opt/victronenergy" || ln -s "$mnt/opt/victronenergy" "$R/opt/victronenergy"
+test -L "$R/data" || ln -s "/var/lib/venus" "$R/data"
+test -L "$R/etc/venus" || ln -s "/var/lib/venus/etc" "$R/etc/venus"
+
+I=""
+case "$(chroot "$R" dpkg --print-architecture)" in
+    (arm64|armhf)
+        # nothing to do
+        ;;
+    ()
+        echo "No architecture found" >&2; exit 1 ;;
+    (*)
+        test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
+        ;;
+esac
+
+test -s "$R/usr/bin/pstree" || I="$I psmisc"
+test -s "$R/usr/bin/sudo" || I="$I sudo"
+test -s "$R/usr/bin/socat" || I="$I socat"
+
+for P in lxml dbus-next dbus ; do
+    test -d "$R/usr/lib/python3/dist-packages/lxml/$P" && continue
+    I="$I python3-$P"
+done
+subs pkg-r
+test -z "$I" || apti "$R" $I
+
+NTW="$R/etc/systemd/system/network-online.target.wants"
+mkdir -p "$NTW"
+test -L "$NTW/user@venus.service" || \
+    ln -s /lib/systemd/system/user@.service "$NTW/user@venus.service"
+
+test -L "$R/etc/systemd/system/network-online.target.wants/venus.service" || \
+    ln -s /etc/systemd/system/venus.service "$R/etc/systemd/system/network-online.target.wants/venus.service"
+
+GD="$V/opt/victronenergy/gui/gfxdrivers"
+if test ! -L "$GD" ; then
+    ln -s "$mnt/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
+fi
+
+
+################# patches
+sed -i -e 's/from collections import/from collections.abc import/' $V/opt/victronenergy/dbus-systemcalc-py/sc_utils.py
+
+sed -i -e 's#scriptdir=.*#scriptdir=/opt/victronenergy/gui#' -e 's/dbus-send --system/dbus-send --session/' $R/opt/venus/startup/gui
+
+sed -i -e 's/from pymodbus.client.sync /from pymodbus.client /' $V/opt/victronenergy/dbus-modbus-client/client.py
+
+
+
+################# VNC
+VPW="$R/var/lib/venus/conf/vncpassword.txt"
+if test ! -s "$VPW" ; then
+    read -s -p "VNC password: " pwd
+    echo "$pwd" >"$VPW"
+    pwd=
+fi
+
+if ! grep -qs iptables "$R/etc/rc.local" ; then
+    cat <<_ >"$R/etc/rc.local"
+#!/bin/bash
+
+# autogenerated. Yes this is a hack. TODO.
+
+iptables -t nat -D PREROUTING -i eth0 -p tcp --dport 59 00 -j DNAT --to-destination 127.0.0.1:5900 2>/dev/null
+iptables -t nat -I PREROUTING -i eth0 -p tcp --dport 59 00 -j DNAT --to-destination 127.0.0.1:5900 2>/dev/null
+
+sysctl net.ipv4.ip_forward=1
+sysctl net.ipv4.conf.eth0.route_localnet=1
+_
+    chmod 0755 "$R/etc/rc.local"
+fi
+
+
+################# udev
+
+if test ! -s "$R/etc/udev/rules.d/serial-starter.rules" ; then
+    (
+    cat <<'_'
+ACTION=="add", SUBSYSTEM=="tty", SUBSYSTEMS=="platform|usb-serial", RUN+="/opt/venus/bin/serial-add %k"
+_
+    sed -e '/SYMLINK+=/d' -e '/RUN+=/d' "$V/etc/udev/rules.d/serial-starter.rules" 
+    ) > "$R/etc/udev/rules.d/75-venus-serial.rules"
+fi
+# We're not using the Venus serial starter.
+
+subs post
+
+$Q echo "Done."

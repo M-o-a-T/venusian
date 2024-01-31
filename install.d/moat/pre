@@ -1,0 +1,2 @@
+mkdir -p "$R/etc/moat"
+test -s "$R/etc/moat/kv.env" || echo MODE=hybrid > "$R/etc/moat/kv.env"

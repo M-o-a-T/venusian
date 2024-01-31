@@ -1,0 +1,4 @@
+test -x $R/usr/bin/moat || I="$I moat"
+for X in kv modbus mqtt micro ; do
+    test -x $R/usr/lib/python3/dist-packages/moat/$X || I="$I moat-$X"
+done
