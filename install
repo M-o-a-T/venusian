@@ -56,6 +56,8 @@ _chg() {
     test -f "$DST" || return 0
     test "$SRC" -ef "$DST" && return 0
     test "$SRC" -nt "$DST" && return 0
+    cmp -s "$SRC" "$DST" && return 0
+    # "cmp -s" compares sizes before reading, so we don't need to
     return 1
 }
 

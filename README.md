@@ -219,19 +219,23 @@ Remember that all of these may contain spaces or other special characters.
 While we recommend not to do that, it's still good practice to quote
 **all** uses of these variables.
 
+
 #### Overlay file system
 
-The installer may or may not create a complete copy of
-`/opt/victronenergy`, the directory where Victron (sensibly) ships its code
-in. In any case, `$OVER` contains the path to the destination file system,
-which commonly is `$R/var/lib/venus/opt`.
+The installer does not create a complete copy of `/opt/victronenergy`, the
+directory Victron ships its code in. Instead, an overlay file system is
+used. `$OVER` contains the path to the "upper directory" of the overlay
+file system that we use to selectively alter files.
 
-Thus, a test whether to replace a file with its patched copy succeeds if
+However, this might change, as userspace overlays impose a certain
+runtime overhead.
+
+Thus, a test whether to replace a file with a patched version should succeed if
 any of
 
 * `$FORCE` is set
 * the destination doesn't exist
-* source and destination are the same file
+* source and destination files are identical
 * the source is newer
 
 It should always `rm -f` the destination and `mkdir -p` any intermediate
@@ -240,6 +244,8 @@ directories.
 The helper function `fchg ‹source› ‹dest›` does this for you. It exits with
 return code 1 if you don't need to do anything. Otherwise the destination
 is a new empty file.
+
+The helper `fln` creates a symlink at ‹dest› that points to ‹source›.
 
 ## Changes to the host system
 
