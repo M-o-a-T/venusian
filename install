@@ -67,18 +67,17 @@ fchg() {
     rm -f "$DST"
     mkdir -p "$(dirname "$DST")"
     touch "$DST"
+    if test -x "$SRC" ; then chmod 755 "$DST"; else chmod 644 "$DST"; fi
     return 0
 }
 
-fchg_e() {
-    # replace DST? (executable)
+fln() {
     SRC="$1"
     DST="$2"
-    fchg "$SRC" "$DST" || return 1
-    chmod 755 "$DST"
+    if test -z "$FORCE" && ! test -L "$DST" ; then return 1; fi
+    ln -sf "$SRC" "$DST"
     return 0
 }
-
 
 # command line processing
 TEMP=$(getopt -o 'fi:d:hr:m:qs:v' --long 'help,force,image:,dir:,root:,mount:,sub:,verbose' -n "$0" -- "$@")
@@ -318,14 +317,13 @@ $Q echo Checking startup scripts
         (S80resolv-watch) ;; # systemd-resolved or some other host program
         (S82report-data-failure)
             # get-unique-id is hard-coded to eth0, which may not even exist
-            test -s "$R$USRV/get-unique-id" || \
-            cat >>"$R$USRV/get-unique-id" <<'_'
+            fchg_e "$V/sbin/get-unique-id" "$R$USRV/get-unique-id" && \
+            cat >"$R$USRV/get-unique-id" <<'_'
 #!/bin/sh
 
-cat /etc/machine-id
+printf 'V%19.19s%04x\n' $(cat /etc/machine-id) $(id -u $USER)
 _
-            chmod +x "$R$USRV/get-unique-id"
-            test -L "$R/sbin/get-unique-id" || ln -s "$USRV/get-unique-id" "$R/sbin/get-unique-id"
+            fln "$USRV/get-unique-id" "$R/sbin/get-unique-id"
             # other than that we do nothing
             # local file system monitoring is not a Venus problem
             ;;
@@ -380,10 +378,10 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
         (venus-html5-logger) continue ;; # what for?
         (gui)
             $CR "$g" Service ExecStart "$USRV/startup/$fx"
+            fchg_e "$V/opt/victronenergy/gui/start-gui.sh" "$R$USRV/startup/$fx" &&
             sed -e 's#-f /etc/venus/headless#-e /dev/null#' \
                 -e 's/mouse=-nomouse/mouse=-mouse/ '\
                 < "$V/opt/victronenergy/gui/start-gui.sh" > "$R$USRV/startup/$fx"
-            chmod +x "$R$USRV/startup/$fx"
             ;;
         (*)
             $CR "$g" Service ExecStart /opt/victronenergy/service/$fx/run
@@ -392,7 +390,7 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
     $CR "$g" Service Type simple
     $CR "$g" Service Restart always
     $CR "$g" Service RestartSec 10
-    test -L "$T/$fx.service" || ln -s "$SP/$fx.service" "$T/$fx.service"
+    fln "$SP/$fx.service" "$T/$fx.service"
 done
 
 
@@ -426,11 +424,11 @@ $Q echo Checking symlinks
 mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
 chroot "$R" chown venus $LIBV/{conf,db,log}
 
-test -L "$R/l" || ln -s "$MNT/lib" "$R/l"
-test -L "$V/usr/l" || ln -s "lib" "$V/usr/l"
-test -L "$R/opt/victronenergy" || ln -s "$MNT/opt/victronenergy" "$R/opt/victronenergy"
-test -L "$R/data" || ln -s "$LIBV" "$R/data"
-test -L "$R/etc/venus" || ln -s "$LIBV/etc" "$R/etc/venus"
+fln -s "$MNT/lib" "$R/l"
+fln -s "lib" "$V/usr/l"
+fln -s "$MNT/opt/victronenergy" "$R/opt/victronenergy"
+fln -s "$LIBV" "$R/data"
+fln -s "$LIBV/etc" "$R/etc/venus"
 
 I=""
 case "$(chroot "$R" dpkg --print-architecture)" in
@@ -457,16 +455,11 @@ test -z "$I" || apti "$R" $I
 
 NTW="$R/etc/systemd/system/network-online.target.wants"
 mkdir -p "$NTW"
-test -L "$NTW/user@venus.service" || \
-    ln -s /lib/systemd/system/user@.service "$NTW/user@venus.service"
-
-test -L "$R/etc/systemd/system/network-online.target.wants/venus.service" || \
-    ln -s /etc/systemd/system/venus.service "$R/etc/systemd/system/network-online.target.wants/venus.service"
+fln /lib/systemd/system/user@.service "$NTW/user@venus.service"
+fln /etc/systemd/system/venus.service "$R/etc/systemd/system/network-online.target.wants/venus.service"
 
 GD="$V/opt/victronenergy/gui/gfxdrivers"
-if test ! -L "$GD" ; then
-    ln -s "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
-fi
+fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
 
 
 ################# overlay
@@ -495,12 +488,7 @@ pat() { # path [sub]
     if [ $# = 1 ] ; then p="patches/$f" ; else  p="install.d/$2/patch/$f"
     fs="$V/opt/victronenergy/$f"
     fd="$R$LIBV/opt/$f"
-    if test -z "$force" && test -f "$fd" ; then continue; fi
-    if test ! -s "$fd" ; then
-        echo "Warning: Patch source not found: $f" >&2
-        continue
-    fi
-    mkdir -p "$(dirname "$fd")"
+    fchg "$fs" "$fd" && \
     $p < $fs > $fd
 }
 

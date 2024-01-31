@@ -241,8 +241,6 @@ The helper function `fchg ‹source› ‹dest›` does this for you. It exits w
 return code 1 if you don't need to do anything. Otherwise the destination
 is a new empty file.
 
-`fchg_e` does the same thing, except that it sets the destination's executable bits.
-
 ## Changes to the host system
 
 This section broadly documents the install script's changes to the host filesystem.
@@ -256,4 +254,6 @@ This section broadly documents the install script's changes to the host filesyst
 * create a symlink `/data` (to $LIBV)
 * populate $USRV
 * add udev scripts
+* add helpers with hardcoded paths:
+  * get-unique-id (uses the host's machine ID)
 
