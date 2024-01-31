@@ -4,16 +4,28 @@ set -u
 
 usage() {
     cat <<_
-Usage: $0 --image A --dir B --root C --mount D --verbose|--quiet
-    '--dir' and '--root' are mandatory.
-    If '--image' is used, unpack/update image A to directory B.
-    Then, adapt B.
-    Also, modify system root C
-    The mountpoint of B on C shall be D.
+Usage: $0
+    --image A --dir B --root C --mount D
 
-    B, C and D can be given as arguments.
+        '--dir' and '--root' are mandatory.
+        If '--image' is used, unpack/update image A to directory B.
+        Then, adapt B.
+        Also, modify system root C
+        The mountpoint of B on C shall be D.
 
-    Available additions:
+    --verbose
+        Print the steps the script executes.
+
+    --quiet
+        Do not report what you#re doing.
+
+    --force
+        Don't skip existing files.
+
+    --sub=ADDON
+        Process add-on scripts.
+
+        Available additions:
 _
     ls install.d
     exit 1
@@ -37,7 +49,7 @@ subs() {
 }
 
 # command line processing
-TEMP=$(getopt -o 'i:d:hr:m:vq' --long 'help,image:,dir:,root:,mount:,verbose' -n "$0" -- "$@")
+TEMP=$(getopt -o 'fi:d:hr:m:qs:v' --long 'help,force,image:,dir:,root:,mount:,sub:,verbose' -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage >&2
 fi
@@ -49,7 +61,9 @@ unset TEMP
 HERE="$(/bin/pwd)"
 
 Q=
-verb=n
+verb=
+force=
+SUB=()
 
 while : ; do
     case "$1" in
@@ -58,6 +72,9 @@ while : ; do
             exit 0 ;;
         (-q|--quiet)
             Q=":"
+            shift ;;
+        (-f|--force)
+            force=y
             shift ;;
         (-v|--verbose)
             verb=y
@@ -73,7 +90,14 @@ while : ; do
             root="$2"
             shift 2 ;;
         (-m|--mount)
-            mnt="$2"
+            MNT="$2"
+            shift 2 ;;
+        (-s|--sub)
+            if test -d "install.d/$2" ; then 
+                SUB+=("$2")
+            else
+                echo "Unknown argument ('$2'). Exiting." >&2
+            fi
             shift 2 ;;
         (--)
             shift; break ;;
@@ -91,19 +115,10 @@ if [ ! -v root ] && [ $# -gt 0 ] ; then
     root="$1"
     shift
 fi
-if [ ! -v mnt ] && [ $# -gt 0 ] ; then
-    mnt="$1"
+if [ ! -v MNT ] && [ $# -gt 0 ] ; then
+    MNT="$1"
     shift
 fi
-
-SUB=()
-for d in "$@" ; do
-    if test -d "install.d/$d" ; then 
-        SUB+=("$d")
-    else
-        echo "Unknown argument ('$d'). Exiting." >&2
-    fi
-done
 
 if [ ! -v dir ] ; then
     echo "A destination directory (-d …) is required" >&2
@@ -114,6 +129,9 @@ if test "$verb" = "y" ; then
     set -x
     Q=":"
 fi
+
+temp=$(mktemp -d)
+trap 'rm -r $temp' 0 1 2 15
 
 
 ################# install local requirements
@@ -131,66 +149,64 @@ if [ ! -v img ] ; then
 else
 $Q echo Copying image
 
-if test "$#" != 2 || test ! -s "$1" ; then
-    echo "Usage: $0 IMAGE DEST" >&2
-    echo "  directory DEST must be empty"
-    exit 1
-fi
-d="$2"
-if test -d "$d" ; then
+if test -d "$dir" ; then
    :
 else
-   btrfs subvol cre "$d" || mkdir "$d"
+   btrfs subvol cre "$dir" || mkdir "$dir"
 fi
 
 # if the image is compressed, unpack it
 imgz="$1"
 img="${imgz%.gz}"
 if [ "$img" != "$imgz" ] ; then
-   img="$t/${img##*/}"
+   img="$temp/${img##*/}"
    gzip -d < "$imgz" > "$img"
 fi
 
-t=$(mktemp -d)
-trap 'rm -r $t' 0 1 2 15
-
-mkdir $t/dir
+mkdir $temp/dir
 ld=$(losetup -f --show -P "$img")
-trap 'losetup -d $ld; rm -r $t' 0 1 2 15
+trap 'losetup -d $ld; rm -r $temp' 0 1 2 15
 
-mount ${ld}p2 $t/dir
-trap 'umount $t/dir; losetup -d $ld; rm -r $t' 0 1 2 15
+mount ${ld}p2 $temp/dir
+trap 'umount $temp/dir; losetup -d $ld; rm -r $temp' 0 1 2 15
 
-rsync -a --numeric-ids --perms --inplace "$t/dir/." "$d/."
+rsync -a --numeric-ids --perms --inplace "$temp/dir/." "$d/."
 echo "Copy/sync finished."
 trap "" 0 1 2 15
 
-umount $t/dir; losetup -d $ld; rm -r $t
+umount $temp/dir; losetup -d $ld; rm -r $temp
 fi
 ################# END COPY
 
 
 ################# SETUP
+if test -f "$root" ; then
+    # Image
+fi
+
 cd "$root"
 R=$(pwd)
 cd "$HERE"
 cd "$dir"
 V=$(pwd)
 t=$(mktemp -d)
-trap 'rm -r $t' 0 1 2 15
-cd $t
+trap 'rm -r $temp' 0 1 2 15
+cd $temp
 umask 022
+
+LIBV=/var/lib/venus
+USRV=/usr/lib/venusian/
 
 subs pre
 
 # create user
 grep -qs "^venus:" "$R/etc/group" || chroot "$R" /sbin/addgroup --system venus
-grep -qs "^venus:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home /var/lib/venus --ingroup venus --system --comment "Venus System User" venus
+grep -qs "^venus:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus System User" venus
 chroot "$R" /sbin/adduser venus systemd-journal
 chroot "$R" /sbin/adduser venus bluetooth
 
 # systemd
-SP="/var/lib/venus/.config/systemd/user"
+SP="$LIBV/.config/systemd/user"
 SY="${R}${SP}"
 mkdir -p "$SY"
 
@@ -201,7 +217,7 @@ for f in "$V/etc/dbus-1/system.d"/* ; do
     sed <"$f" >"$g"  -e 's/"root"/"venus"/'
 done
 
-mkdir -p "$R/opt/venus/"{bin,startup}
+mkdir -p "$R$USRV/"{bin,startup}
 
 $Q echo Checking startup scripts
 
@@ -270,14 +286,14 @@ $Q echo Checking startup scripts
         (S80resolv-watch) ;; # systemd-resolved or some other host program
         (S82report-data-failure)
             # get-unique-id is hard-coded to eth0, which may not even exist
-            test -s "$R/opt/venus/bin/get-unique-id" || \
-            cat >>"$R/opt/venus/bin/get-unique-id" <<'_'
+            test -s "$R$USRV/get-unique-id" || \
+            cat >>"$R$USRV/get-unique-id" <<'_'
 #!/bin/sh
 
 cat /etc/machine-id
 _
-            chmod +x "$R/opt/venus/bin/get-unique-id"
-            test -L "$R/sbin/get-unique-id" || ln -s /opt/venus/bin/get-unique-id "$R/sbin/get-unique-id"
+            chmod +x "$R$USRV/get-unique-id"
+            test -L "$R/sbin/get-unique-id" || ln -s "$USRV/get-unique-id" "$R/sbin/get-unique-id"
             # other than that we do nothing
             # local file system monitoring is not a Venus problem
             ;;
@@ -331,11 +347,11 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
         (dbus-adc) continue ;; # ?
         (venus-html5-logger) continue ;; # what for?
         (gui)
-            $CR "$g" Service ExecStart /opt/venus/startup/$fx
+            $CR "$g" Service ExecStart "$USRV/startup/$fx"
             sed -e 's#-f /etc/venus/headless#-e /dev/null#' \
                 -e 's/mouse=-nomouse/mouse=-mouse/ '\
-                < "$V/opt/victronenergy/gui/start-gui.sh" > "$R/opt/venus/startup/$fx"
-            chmod +x "$R/opt/venus/startup/$fx"
+                < "$V/opt/victronenergy/gui/start-gui.sh" > "$R$USRV/startup/$fx"
+            chmod +x "$R$USRV/startup/$fx"
             ;;
         (*)
             $CR "$g" Service ExecStart /opt/victronenergy/service/$fx/run
@@ -352,7 +368,16 @@ done
 
 LA="$V/lib/ld-2.31.so"
 LB="$R/lib/ld-linux-armhf.so.3"
-if test ! -s "$LB" || test "$LA" -nt "$LB" ; then
+L=
+for S in "${SUB[@]}" ; do
+    test -s "$S/lib" || continue
+    L=y
+    source "$S/lib"
+done
+
+if test -n "$L" ; then
+    $Q echo Skip patching ld-linux-armhf
+elif test ! -s "$LB" || test "$LA" -nt "$LB" ; then
     # need to hack
     $Q echo Patching ld-linux-armhf
     sed -e 's#/lib/#/v/l/#' -e 's#/usr/lib/#/v/u/lib/#' < "$LA" > "$LB.n"
@@ -366,14 +391,14 @@ fi
 
 ################# random directories and links
 $Q echo Checking symlinks
-mkdir -p "$R/var/lib/venus/"{conf,db,log,etc,themes,var/lib}
-chroot "$R" chown venus /var/lib/venus/{conf,db,log}
+mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
+chroot "$R" chown venus $LIBV/{conf,db,log}
 
-test -L "$R/l" || ln -s "$mnt/lib" "$R/l"
+test -L "$R/l" || ln -s "$MNT/lib" "$R/l"
 test -L "$V/usr/l" || ln -s "lib" "$V/usr/l"
-test -L "$R/opt/victronenergy" || ln -s "$mnt/opt/victronenergy" "$R/opt/victronenergy"
-test -L "$R/data" || ln -s "/var/lib/venus" "$R/data"
-test -L "$R/etc/venus" || ln -s "/var/lib/venus/etc" "$R/etc/venus"
+test -L "$R/opt/victronenergy" || ln -s "$MNT/opt/victronenergy" "$R/opt/victronenergy"
+test -L "$R/data" || ln -s "$LIBV" "$R/data"
+test -L "$R/etc/venus" || ln -s "$LIBV/etc" "$R/etc/venus"
 
 I=""
 case "$(chroot "$R" dpkg --print-architecture)" in
@@ -391,7 +416,7 @@ test -s "$R/usr/bin/pstree" || I="$I psmisc"
 test -s "$R/usr/bin/sudo" || I="$I sudo"
 test -s "$R/usr/bin/socat" || I="$I socat"
 
-for P in lxml dbus-next dbus ; do
+for P in lxml dbus-next dbus pyudev pymodbus serial-asyncio; do
     test -d "$R/usr/lib/python3/dist-packages/lxml/$P" && continue
     I="$I python3-$P"
 done
@@ -408,21 +433,59 @@ test -L "$R/etc/systemd/system/network-online.target.wants/venus.service" || \
 
 GD="$V/opt/victronenergy/gui/gfxdrivers"
 if test ! -L "$GD" ; then
-    ln -s "$mnt/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
+    ln -s "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
 fi
 
 
+################# overlay
+
+test -f "$R/etc/systemd/system/opt-victronenergy.mount" || \
+    cat <<_ >"$R/etc/systemd/system/opt-victronenergy.mount"
+[Unit]
+After=sysinit.target
+Requires=sysinit.target
+
+[Mount]
+Where=/opt/victronenergy
+What=$LIBV/opt
+Type=fuse.fuse-overlayfs
+Options=allow_other,lowerdir=$MNT/opt/victronenergy,upperdir=$LIBV/opt,workdir=$LIBV/.opt
+
+[Install]
+RequiredBy=multi-user.target
+RequiredBy=user@venus.target
+_
+
 ################# patches
-sed -i -e 's/from collections import/from collections.abc import/' $V/opt/victronenergy/dbus-systemcalc-py/sc_utils.py
 
-sed -i -e 's#scriptdir=.*#scriptdir=/opt/victronenergy/gui#' -e 's/dbus-send --system/dbus-send --session/' $R/opt/venus/startup/gui
+pat() { # path [sub]
+    f="$1"
+    if [ $# = 1 ] ; then p="patches/$f" ; else  p="install.d/$2/patch/$f"
+    fs="$V/opt/victronenergy/$f"
+    fd="$R$LIBV/opt/$f"
+    if test -z "$force" && test -f "$fd" ; then continue; fi
+    if test ! -s "$fd" ; then
+        echo "Warning: Patch source not found: $f" >&2
+        continue
+    fi
+    mkdir -p "$(dirname "$fd")"
+    $p < $fs > $fd
+}
 
-sed -i -e 's/from pymodbus.client.sync /from pymodbus.client /' $V/opt/victronenergy/dbus-modbus-client/client.py
+(cd patch ; find . -type f ) | while read f ; do
+    pat "$f"
+done
+for S in "${SUB[@]}" ; do
+    test -d "$S/patch" || continue
+    (cd "$S/patch" ; find . -type f ) | while read f ; do
+        pat "$f" "$S"
+    done
+done
 
 
 
 ################# VNC
-VPW="$R/var/lib/venus/conf/vncpassword.txt"
+VPW="$R$LIBV/conf/vncpassword.txt"
 if test ! -s "$VPW" ; then
     read -s -p "VNC password: " pwd
     echo "$pwd" >"$VPW"
@@ -449,11 +512,11 @@ fi
 
 if test ! -s "$R/etc/udev/rules.d/serial-starter.rules" ; then
     (
-    cat <<'_'
-ACTION=="add", SUBSYSTEM=="tty", SUBSYSTEMS=="platform|usb-serial", RUN+="/opt/venus/bin/serial-add %k"
+    cat <<_
+ACTION=="add", SUBSYSTEM=="tty", SUBSYSTEMS=="platform|usb-serial", RUN+="$USRV/serial-add %k"
 _
     sed -e '/SYMLINK+=/d' -e '/RUN+=/d' "$V/etc/udev/rules.d/serial-starter.rules" 
-    ) > "$R/etc/udev/rules.d/75-venus-serial.rules"
+    ) > "$R/etc/udev/rules.d/75-venusian-serial.rules"
 fi
 # We're not using the Venus serial starter.
 
