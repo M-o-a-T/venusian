@@ -468,6 +468,7 @@ esac
 
 test -s "$R/usr/bin/pstree" || I="$I psmisc"
 test -s "$R/usr/bin/sudo" || I="$I sudo"
+test -s "$R/usr/sbin/iptables" || I="$I iptables"
 test -s "$R/usr/bin/socat" || I="$I socat"
 test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
 test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
