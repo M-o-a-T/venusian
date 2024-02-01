@@ -449,6 +449,7 @@ test -s "$R/usr/bin/pstree" || I="$I psmisc"
 test -s "$R/usr/bin/sudo" || I="$I sudo"
 test -s "$R/usr/bin/socat" || I="$I socat"
 test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
+test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
 test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
 test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
@@ -544,6 +545,47 @@ _
     ) > "$R/etc/udev/rules.d/75-venusian-serial.rules"
 fi
 # We're not using the Venus serial starter.
+
+
+
+################# mountpoints
+
+$Q echo Setting up mount points
+
+UD="$R/etc/systemd/system/user@venus.d/"
+mkdir -p $UD
+
+MP=
+test -d "$R/$MNT/opt/victronenergy" || MP=$(systemd-escape -m $MNT)
+
+fdo "$UD/mount.conf" && cat >"$UD/mount.conf" <<_
+[Unit]
+After=opt-victronenergy.mount $MP
+Requires=opt-victronenergy.mount $MP
+_
+
+if test -n "$MP" ; then
+    mkdir -p "$R/$MNT"
+
+    # no test of $FORCE here
+    test ! -f "$R/etc/systemd/system/$MP" && \
+        cat >"$R/etc/systemd/system/$MP" <<_
+[Unit]
+After=sysinit.target
+Requires=sysinit.target
+
+[Mount]
+Where=$MNT
+What=$dir
+Type=bind
+Options=
+_
+    if test -n "$FORCE" ; then
+        echo "*** $R/etc/systemd/system/$MP was not overwritten. ***"
+    else
+        echo "*** Warning *** Adjust $R/etc/systemd/system/$MP ***"
+    fi
+fi
 
 
 ################# finish
