@@ -112,7 +112,6 @@ while : ; do
             verb=y
             shift ;;
         (-d|--dir)
-            cd "$2"
             dir="$2"
             shift 2 ;;
         (-i|--img)
@@ -188,7 +187,7 @@ else
 fi
 
 # if the image is compressed, unpack it
-imgz="$1"
+imgz="$img"
 img="${imgz%.gz}"
 if [ "$img" != "$imgz" ] ; then
    img="$temp/${img##*/}"
@@ -202,7 +201,7 @@ trap 'losetup -d $ld; rm -r $temp' 0 1 2 15
 mount ${ld}p2 $temp/dir
 trap 'umount $temp/dir; losetup -d $ld; rm -r $temp' 0 1 2 15
 
-rsync -a --numeric-ids --perms --inplace "$temp/dir/." "$d/."
+rsync -a --numeric-ids --perms --inplace "$temp/dir/." "$dir/."
 echo "Copy/sync finished."
 trap "" 0 1 2 15
 
@@ -213,7 +212,8 @@ fi
 
 ################# SETUP
 if test -f "$root" ; then
-    # Image
+    echo TODO root as an Image >&2
+    exit 1
 fi
 
 cd "$root"
@@ -221,7 +221,7 @@ R=$(pwd)
 cd "$HERE"
 cd "$dir"
 V=$(pwd)
-t=$(mktemp -d)
+temp=$(mktemp -d)
 trap 'rm -r $temp' 0 1 2 15
 cd $temp
 umask 022
