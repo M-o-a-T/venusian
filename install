@@ -360,6 +360,11 @@ $Q echo Checking startup scripts
 
 done
 
+fdo "$R/$LIBV/.config/systemd/user.conf" || \
+    cat >"$R/$LIBV/.config/systemd/user.conf" <<_
+[Manager]
+DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
+_
 
 ################# Services
 
