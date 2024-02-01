@@ -237,7 +237,6 @@ $Q echo Primary set-up
 grep -qs "^venus:" "$R/etc/group" || chroot "$R" /sbin/addgroup --system venus
 grep -qs "^venus:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus System User" venus
 chroot "$R" /sbin/adduser venus systemd-journal
-chroot "$R" /sbin/adduser venus bluetooth
 chroot "$R" /sbin/adduser venus dialout
 
 # systemd
@@ -440,6 +439,7 @@ esac
 test -s "$R/usr/bin/pstree" || I="$I psmisc"
 test -s "$R/usr/bin/sudo" || I="$I sudo"
 test -s "$R/usr/bin/socat" || I="$I socat"
+test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
 
 for P in lxml dbus-next dbus pyudev pymodbus serial-asyncio; do
     test -d "$R/usr/lib/python3/dist-packages/lxml/$P" && continue
@@ -536,6 +536,11 @@ _
     ) > "$R/etc/udev/rules.d/75-venusian-serial.rules"
 fi
 # We're not using the Venus serial starter.
+
+
+################# finish
+
+chroot "$R" /sbin/adduser venus bluetooth
 
 subs post
 
