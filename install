@@ -390,11 +390,11 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
         (dbus-ble-sensors) continue ;; # ?
         (venus-html5-logger) continue ;; # what for?
         (gui)
-            $CR "$g" Service ExecStart "$USRV/startup/$fx"
-            fchg "$V/opt/victronenergy/gui/start-gui.sh" "$R$USRV/startup/$fx" ||
+            $CR "$g" Service ExecStart "$USRV/bin/start-gui"
+            fchg "$V/opt/victronenergy/gui/start-gui.sh" "$R$USRV/bin/start-gui" ||
             sed -e 's#-f /etc/venus/headless#-e /dev/null#' \
                 -e 's/mouse=-nomouse/mouse=-mouse/ '\
-                < "$V/opt/victronenergy/gui/start-gui.sh" > "$R$USRV/startup/$fx"
+                < "$V/opt/victronenergy/gui/start-gui.sh" > "$R$USRV/bin/start-gui"
             ;;
         (*)
             $CR "$g" Service ExecStart /opt/victronenergy/service/$fx/run
