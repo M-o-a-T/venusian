@@ -231,6 +231,8 @@ umask 022
 LIBV=/var/lib/venus
 USRV=/usr/lib/venusian/
 
+mkdir -p "$R/opt/victronenergy"
+
 subs pre
 
 # create user
