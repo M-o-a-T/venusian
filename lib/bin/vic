@@ -1,0 +1,3 @@
+#!/bin/sh
+if test $# = 0 ; then set -- /bin/bash; fi
+exec sudo -u victron env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u victron)/bus systemd-run  --user --scope "$@"
