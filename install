@@ -579,8 +579,8 @@ Requires=sysinit.target
 [Mount]
 Where=$MNT
 What=$dir
-Type=bind
-Options=
+Type=none
+Options=bind
 _
     if test -n "$FORCE" ; then
         echo "*** $R/etc/systemd/system/$MP was not overwritten. ***"
