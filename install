@@ -442,8 +442,10 @@ test -s "$R/usr/bin/pstree" || I="$I psmisc"
 test -s "$R/usr/bin/sudo" || I="$I sudo"
 test -s "$R/usr/bin/socat" || I="$I socat"
 test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
+test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
+test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
-for P in lxml dbus-next dbus pyudev pymodbus serial-asyncio; do
+for P in lxml dbus pyudev pymodbus; do
     test -d "$R/usr/lib/python3/dist-packages/$P" && continue
     I="$I python3-$P"
 done
