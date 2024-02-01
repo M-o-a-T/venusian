@@ -79,9 +79,8 @@ fchg() {
 fln() {
     SRC="$1"
     DST="$2"
-    if test -z "$FORCE" && ! test -L "$DST" ; then return 1; fi
+    if test -z "$FORCE" && test -L "$DST" ; then return ; fi
     ln -sf "$SRC" "$DST"
-    return 0
 }
 
 # command line processing
