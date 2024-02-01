@@ -220,11 +220,9 @@ if test -f "$root" ; then
     exit 1
 fi
 
-cd "$root"
-R=$(pwd)
-cd "$HERE"
-cd "$dir"
-V=$(pwd)
+R="$(realpath "$root")"
+V="$(realpath "$dir")"
+
 temp=$(mktemp -d)
 trap 'rm -r $temp' 0 1 2 15
 cd $temp
