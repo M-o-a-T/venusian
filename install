@@ -265,7 +265,7 @@ for f in "$V/etc/dbus-1/system.d"/* ; do
     sed <"$f" >"$g"  -e 's/"root"/"venus"/'
 done
 
-mkdir -p "$R$USRV"
+mkdir -p "$R$USRV"/{opt,.opt}
 cp -r "$HERE/lib/"* "$R$USRV/"
 
 $Q echo Checking startup scripts
@@ -483,9 +483,9 @@ Requires=sysinit.target
 
 [Mount]
 Where=/opt/victronenergy
-What=$LIBV/opt
+What=$USRV/opt
 Type=fuse.fuse-overlayfs
-Options=allow_other,lowerdir=$MNT/opt/victronenergy,upperdir=$LIBV/opt,workdir=$LIBV/.opt
+Options=allow_other,lowerdir=$MNT/opt/victronenergy,upperdir=$USRV/opt,workdir=$USRV/.opt
 _
 
 ################# patches
@@ -494,7 +494,7 @@ pat() { # path [sub]
     f="$1"
     if [ $# = 1 ] ; then p="patches/$f" ; else  p="$HERE/install.d/$2/patch/$f"; fi
     fs="$V/opt/victronenergy/$f"
-    fd="$R$LIBV/opt/$f"
+    fd="$R$USRV/opt/$f"
     fchg "$fs" "$fd" || \
 	    $p < $fs > $fd
 }
