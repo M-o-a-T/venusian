@@ -530,6 +530,7 @@ sysctl net.ipv4.conf.eth0.route_localnet=1
 _
     chmod 0755 "$R/etc/rc.local"
 fi
+test "$R" = "/" && systemctl restart rc-local.service
 
 
 ################# udev
