@@ -393,7 +393,9 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
             $CR "$g" Service ExecStart "$USRV/bin/start-gui"
             fchg "$V/opt/victronenergy/gui/start-gui.sh" "$R$USRV/bin/start-gui" ||
             sed -e 's#-f /etc/venus/headless#-e /dev/null#' \
-                -e 's/mouse=-nomouse/mouse=-mouse/ '\
+                -e 's/mouse=-mouse/mouse=-nomouse/ '\
+                -e 's/send --system/send --session/ '\
+                -e 's#^scriptdir=.*#scriptdir=/opt/victronenergy/gui# '\
                 < "$V/opt/victronenergy/gui/start-gui.sh" > "$R$USRV/bin/start-gui"
             ;;
         (*)
