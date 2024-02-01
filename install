@@ -419,7 +419,7 @@ fi
 
 ################# random directories and links
 mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
-chroot "$R" chown venus $LIBV/{conf,db,log,.config}
+chroot "$R" chown -R venus $LIBV/{etc,conf,db,log,.config}
 
 $Q echo Checking symlinks
 fln -s "$MNT/lib" "$R/l"
