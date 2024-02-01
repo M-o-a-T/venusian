@@ -542,4 +542,6 @@ chroot "$R" /sbin/adduser venus bluetooth
 
 subs post
 
+test "$R" = "/" && systemctl daemon-reload
+
 $Q echo "Done."
