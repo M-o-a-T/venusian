@@ -64,6 +64,13 @@ _chg() {
     return 1
 }
 
+fdo() {
+    DST="$1"
+    test -n "$FORCE" && return 0
+    test -f "$DST" || return 0
+    return 1
+}
+
 fchg() {
     # replace DST?
     SRC="$1"
@@ -465,7 +472,7 @@ fln "$USRV/get-unique-id" "$R/sbin/get-unique-id"
 
 ################# overlay
 
-test -f "$R/etc/systemd/system/opt-victronenergy.mount" || \
+fdo "$R/etc/systemd/system/opt-victronenergy.mount" && \
     cat >"$R/etc/systemd/system/opt-victronenergy.mount" <<_
 [Unit]
 After=sysinit.target
