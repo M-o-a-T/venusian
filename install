@@ -444,7 +444,7 @@ test -s "$R/usr/bin/socat" || I="$I socat"
 test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
 
 for P in lxml dbus-next dbus pyudev pymodbus serial-asyncio; do
-    test -d "$R/usr/lib/python3/dist-packages/lxml/$P" && continue
+    test -d "$R/usr/lib/python3/dist-packages/$P" && continue
     I="$I python3-$P"
 done
 subs pkg-r
