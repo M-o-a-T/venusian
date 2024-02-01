@@ -449,6 +449,7 @@ fln "lib" "$V/usr/l"
 fln "$MNT/opt/victronenergy" "$R/opt/victronenergy"
 fln "$LIBV" "$R/data"
 fln "$LIBV/etc" "$R/etc/venus"
+fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
 
 mkdir -p "$R/v"
 chmod 755 "$R/v"
