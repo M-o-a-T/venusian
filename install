@@ -52,7 +52,7 @@ subs() {
 }
 
 _chg() {
-    # check: do we replace DST?
+    # check: do we replace DST from SRC?
     SRC="$1"
     DST="$2"
     test -n "$FORCE" && return 0
@@ -65,25 +65,27 @@ _chg() {
 }
 
 fdo() {
+    # check: do we not replace DST?
     DST="$1"
-    test -n "$FORCE" && return 0
-    test -f "$DST" || return 0
-    return 1
+    test -n "$FORCE" && return 1
+    test -f "$DST" || return 1
+    return 0
 }
 
 fchg() {
-    # replace DST?
+    # check: do we not replace DST from SRC?
     SRC="$1"
     DST="$2"
-    _chg "$SRC" "$DST" || return 1
+    _chg "$SRC" "$DST" || return 0
     rm -f "$DST"
     mkdir -p "$(dirname "$DST")"
     touch "$DST"
     if test -x "$SRC" ; then chmod 755 "$DST"; else chmod 644 "$DST"; fi
-    return 0
+    return 1
 }
 
 fln() {
+    # To link or not to link …
     SRC="$1"
     DST="$2"
     if test -z "$FORCE" && test -L "$DST" ; then return ; fi
@@ -383,7 +385,7 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
         (venus-html5-logger) continue ;; # what for?
         (gui)
             $CR "$g" Service ExecStart "$USRV/startup/$fx"
-            fchg_e "$V/opt/victronenergy/gui/start-gui.sh" "$R$USRV/startup/$fx" &&
+            fchg "$V/opt/victronenergy/gui/start-gui.sh" "$R$USRV/startup/$fx" ||
             sed -e 's#-f /etc/venus/headless#-e /dev/null#' \
                 -e 's/mouse=-nomouse/mouse=-mouse/ '\
                 < "$V/opt/victronenergy/gui/start-gui.sh" > "$R$USRV/startup/$fx"
@@ -473,7 +475,7 @@ fln "$USRV/get-unique-id" "$R/sbin/get-unique-id"
 
 ################# overlay
 
-fdo "$R/etc/systemd/system/opt-victronenergy.mount" && \
+fdo "$R/etc/systemd/system/opt-victronenergy.mount" || \
     cat >"$R/etc/systemd/system/opt-victronenergy.mount" <<_
 [Unit]
 After=sysinit.target
@@ -493,8 +495,8 @@ pat() { # path [sub]
     if [ $# = 1 ] ; then p="patches/$f" ; else  p="$HERE/install.d/$2/patch/$f"; fi
     fs="$V/opt/victronenergy/$f"
     fd="$R$LIBV/opt/$f"
-    fchg "$fs" "$fd" && \
-    $p < $fs > $fd
+    fchg "$fs" "$fd" || \
+	    $p < $fs > $fd
 }
 
 (cd patch ; find . -type f ) | while read f ; do
@@ -558,7 +560,7 @@ mkdir -p $UD
 MP=
 test -d "$R/$MNT/opt/victronenergy" || MP=$(systemd-escape -m $MNT)
 
-fdo "$UD/mount.conf" && cat >"$UD/mount.conf" <<_
+fdo "$UD/mount.conf" || cat >"$UD/mount.conf" <<_
 [Unit]
 After=opt-victronenergy.mount $MP
 Requires=opt-victronenergy.mount $MP
