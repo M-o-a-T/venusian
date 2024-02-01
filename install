@@ -434,6 +434,7 @@ elif test ! -s "$LB" || test "$LA" -nt "$LB" ; then
     fi
     mv "$LB.n" "$LB"
     touch -r "$LA" "$LB"
+    chmod 755 "$LB"
 fi
 
 ################# random directories and links
