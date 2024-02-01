@@ -361,6 +361,7 @@ mkdir -p "$T"
 ls "$V/opt/victronenergy/service/" | while read f ; do
     fx="${f##*/}"
     g="$SY/$fx.service"
+    test -n "$FORCE" || test ! -f "$g" || continue
     case "$fx" in 
         (ppp) continue ;; # Of course not.
         (llmnrd) continue ;; # Not that either.
