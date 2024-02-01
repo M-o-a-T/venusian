@@ -400,6 +400,10 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
             $CR "$g" Service ExecStart /opt/victronenergy/service/$fx/run
             ;;
     esac
+    if [ "$fx" != "localsettings" ] ; then
+        $CR "$g" Unit Requires localsettings.service
+        $CR "$g" Unit After localsettings.service
+    fi
     $CR "$g" Service Type simple
     $CR "$g" Service Restart always
     $CR "$g" Service RestartSec 10
