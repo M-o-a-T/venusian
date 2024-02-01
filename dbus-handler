@@ -1,0 +1,200 @@
+#!/usr/in/python3
+
+import os
+import click
+import socket
+import pyudev as udev
+import logging
+import time
+from pprint import pprint
+from pathlib import Path
+from contextlib import suppress
+from fnmatch import fnmatch
+
+from yaml import safe_load as yload
+
+logger = logging.getLogger("handler")
+
+CFG = {}
+cfg_time = 0
+
+@click.command
+@click.option("-c","--config",required=True,multiple=True,type=click.Path(file_okay=True,dir_okay=False,readable=True,exists=True),  help="Config file (YAML)")
+@click.option("-s","--socket","sock",type=click.Path(), default="/run/venusian/new-device", help="Messaging socket")
+@click.option("-v","--verbose",count=True, help="Be more verbose")
+def main(config, sock, verbose):
+    """
+    Process new Venus devices.
+
+    This program reads /run/venusian and starts the appropriate service.
+
+    More than one config file can be used. They are concatenated.
+    The first matching record is used.
+
+    The configuration has the form::
+
+        dbus:
+        - match:
+            key1: pattern
+            key2: another_pattern
+          service: NAME
+          user: venus
+
+    Other keys are ignored. The user defaults to venus.
+    A missing service skips this device; the next config file is used.
+    service=null ignores this device.
+
+    """
+    logging.basicConfig(level=logging.WARNING if verbose == 0 else logging.INFO if verbose == 1 else logging.DEBUG)
+
+    config = [ Path(f) for f in config ]
+
+    with suppress(FileNotFoundError):
+        os.unlink(sock)
+
+    h = Handler(socket=sock, config=config)
+    h.run_sync()
+
+
+class Handler:
+    def __init__(self, socket: Path, config: list[Path]):
+        self.sockname = socket
+        self.cfg_files = config
+        self.read_cfg(first=True)
+
+        self.known = dict()
+
+    def run_sync(self):
+        s = socket.socket(family=socket.AF_UNIX, type=socket.SOCK_DGRAM, proto=0)
+        with suppress(FileNotFoundError):
+            os.unlink(self.sockname)
+        s.bind(self.sockname)
+
+        self._socket = s
+        self._udev = udev.Context()
+
+        context = udev.Context()
+        monitor = udev.Monitor.from_netlink(context)
+        monitor.filter_by(subsystem="tty")
+
+        def send_event(dev):
+            self._socket.sendto(f"{dev.action}:{dev.properties['ID_DEVNAME']}".encode("utf-8"), self.sockname)
+
+        self.observer = udev.MonitorObserver(monitor, callback=send_event)
+        self.observer.start()
+        try:
+            self._run_sync()
+        finally:
+            self.observer.stop()
+
+    def _run_sync(self):
+        for dev in self._udev.list_devices(subsystem="tty",ID_BUS="usb",SUBSYSTEMS="platform|usb-serial"):
+            self.process_sync(dev)
+        try:
+            while True:
+                msg = self._socket.recv(1000)
+                self.read_cfg()
+                try:
+                    logger.debug("processing %r", msg)
+                    msg = msg.decode("utf-8").strip()
+                    act,name = msg.split(":", 1)
+                    if act == "add":
+                        for dev in self._udev.list_devices(subsystem="tty",SUBSYSTEMS="platform|usb-serial").match_sys_name(msg):
+                            self.process_sync(dev)
+                    elif act == "remove" and dev in self.known:
+                        self.stop_handler(dev)
+                except Exception:
+                    logger.exception("Error processing {msg !r}")
+        finally:
+            os.unlink(self.sockname)
+
+    def find_cfg(self, dev):
+        prop = dev.properties
+        def match1(rule: dict[str,str]) -> bool:
+            for k,v in rule.items():
+                if v is None:
+                    if k in prop:
+                        return False
+                else:
+                    try:
+                        if not fnmatch(prop[k], v):
+                            return False
+                    except KeyError:
+                        return False
+            return True
+
+        def match2(rule: dict):
+            try:
+                rules = rule["match"]
+            except KeyError:
+                return None
+            if isinstance(rules, list):
+                for r in rules:
+                    if match1(r):
+                        return True
+                return False
+            else:
+                return match1(rules)
+
+
+        for cfg in self.cfg:
+            cfg = cfg.get("dbus", [])
+            for rule in cfg:
+                m = match2(rule)
+                if not m:
+                    continue
+                s = rule.get("service", False)
+                if s is None:
+                    return None,None
+                elif s is False:
+                    break
+                return s, rule.get("user","venus")
+        return None,None
+
+
+    def process_sync(self, dev):
+        service,user = self.find_cfg(dev)
+        if service is None:
+            return
+        self.start_sync(name,service, user)
+
+    def start_sync(self, name, service, user):
+        if name in self.known:
+            logger.error("KNOWN %s %s %s",service,user,name)
+        self.known[name] = (service, user)
+        logger.error("START %s %s %s",service,user,name)
+
+    def stop_sync(self, name):
+        try:
+            service,user = self.known.pop(name)
+        except KeyError:
+            return
+        logger.error("STOP %s %s %s",service,user,name)
+
+    def read_cfg(self, first:bool = False):
+        cfg = [{}] * len(self.cfg_files) if first else self.cfg
+
+        for n,(c,fn) in enumerate(zip(cfg, self.cfg_files)):
+            ts = fn.stat().st_ctime
+            if c.get("_t",0) != ts:
+                continue
+
+            with fn.open("r") as f:
+                try:
+                    cf = yload(f)
+                    if not isinstance(cf, dict):
+                        raise RuntimeError(f"YAML {fn !r} is not a mapping.")
+                except Exception:
+                    if prev is None:
+                        raise  # first run must work
+                    logger.exception("Reading %r", fn)
+                    continue
+
+            cf["_t"] = ts
+            cfg[n] = cf
+
+        self.cfg = cfg
+
+
+if __name__ == "__main__":
+    main()
