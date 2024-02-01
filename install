@@ -97,7 +97,7 @@ HERE="$(realpath "$(dirname "$0")")"
 
 Q=
 verb=
-force=
+FORCE=
 SUB=()
 
 while : ; do
@@ -109,7 +109,7 @@ while : ; do
             Q=":"
             shift ;;
         (-f|--force)
-            force=y
+            FORCE=y
             shift ;;
         (-v|--verbose)
             verb=y
