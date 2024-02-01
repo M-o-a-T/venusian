@@ -168,7 +168,7 @@ trap 'rm -r $temp' 0 1 2 15
 ################# install local requirements
 I=""
 which crudini >/dev/null 2>&1 || I="$I crudini"
-which systemd-nspawn >/dev/null 2>&1 || I="$I systemd-nspawn"
+which systemd-nspawn >/dev/null 2>&1 || I="$I systemd-container"
 if test -n "$I" ; then
     $Q echo Locally installing $@
     apt install $I
