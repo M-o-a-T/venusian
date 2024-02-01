@@ -34,7 +34,11 @@ apti() {
    R="$1"
    shift
    $Q echo Installing $@
-   systemd-nspawn -D "$R" apt-get install --yes --no-install-recommends -o Dpkg::Options::="--force-confdef" "$@" </dev/tty >/dev/tty 2>&1
+   if test "$R" = "/" ; then
+      apt-get install --yes --no-install-recommends -o Dpkg::Options::="--force-confdef" "$@" </dev/tty >/dev/tty 2>&1
+   else
+      systemd-nspawn -D "$R" apt-get install --yes --no-install-recommends -o Dpkg::Options::="--force-confdef" "$@" </dev/tty >/dev/tty 2>&1
+   fi
 }
 
 subs() {
