@@ -461,7 +461,7 @@ test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
 test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
 test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
-for P in lxml dbus pyudev pymodbus; do
+for P in lxml dbus pyudev pymodbus dnslib websockets; do
     test -d "$R/usr/lib/python3/dist-packages/$P" && continue
     I="$I python3-$P"
 done
