@@ -492,19 +492,19 @@ _
 
 pat() { # path [sub]
     f="$1"
-    if [ $# = 1 ] ; then p="patches/$f" ; else  p="$HERE/install.d/$2/patch/$f"; fi
+    if [ $# = 1 ] ; then p="$HERE/patch/$f" ; else  p="$HERE/install.d/$2/patch/$f"; fi
     fs="$V/opt/victronenergy/$f"
     fd="$R$USRV/opt/$f"
     fchg "$fs" "$fd" || \
 	    $p < $fs > $fd
 }
 
-(cd patch ; find . -type f ) | while read f ; do
+(cd "$HERE/patch" ; find . -type f ) | while read f ; do
     pat "$f"
 done
 for S in "${SUB[@]}" ; do
-    test -d "$S/patch" || continue
-    (cd "$S/patch" ; find . -type f ) | while read f ; do
+    test -d "$HERE/$S/patch" || continue
+    (cd "$HERE/$S/patch" ; find . -type f ) | while read f ; do
         pat "$f" "$S"
     done
 done
