@@ -442,11 +442,11 @@ mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
 chroot "$R" chown -R venus $LIBV/{etc,conf,db,log,.config}
 
 $Q echo Checking symlinks
-fln -s "$MNT/lib" "$R/l"
-fln -s "lib" "$V/usr/l"
-fln -s "$MNT/opt/victronenergy" "$R/opt/victronenergy"
-fln -s "$LIBV" "$R/data"
-fln -s "$LIBV/etc" "$R/etc/venus"
+fln "$MNT/lib" "$R/l"
+fln "lib" "$V/usr/l"
+fln "$MNT/opt/victronenergy" "$R/opt/victronenergy"
+fln "$LIBV" "$R/data"
+fln "$LIBV/etc" "$R/etc/venus"
 
 I=""
 case "$(chroot "$R" dpkg --print-architecture)" in
