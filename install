@@ -448,6 +448,11 @@ fln "$MNT/opt/victronenergy" "$R/opt/victronenergy"
 fln "$LIBV" "$R/data"
 fln "$LIBV/etc" "$R/etc/venus"
 
+mkdir -p "$R/v"
+chmod 755 "$R/v"
+fln "$MNT/lib" "$R/v/l"
+fln "$MNT/usr" "$R/v/u"
+
 I=""
 case "$(chroot "$R" dpkg --print-architecture)" in
     (arm64|armhf)
