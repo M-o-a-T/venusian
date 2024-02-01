@@ -232,14 +232,18 @@ USRV=/usr/lib/venusian/
 subs pre
 
 # create user
+$Q echo Primary set-up
 grep -qs "^venus:" "$R/etc/group" || chroot "$R" /sbin/addgroup --system venus
 grep -qs "^venus:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus System User" venus
 chroot "$R" /sbin/adduser venus systemd-journal
 chroot "$R" /sbin/adduser venus bluetooth
+chroot "$R" /sbin/adduser venus dialout
 
 # systemd
 SP="$LIBV/.config/systemd/user"
 SY="${R}${SP}"
+mkdir -p "$LIBV/.config"
+cp -r "$HERE/cfg/"* "$LIBV/.config/"
 mkdir -p "$SY"
 
 # set up DBUS permissions
@@ -249,7 +253,8 @@ for f in "$V/etc/dbus-1/system.d"/* ; do
     sed <"$f" >"$g"  -e 's/"root"/"venus"/'
 done
 
-mkdir -p "$R$USRV/"{bin,startup}
+mkdir -p "$R$USRV"
+cp -r "$HERE/lib/"* "$R$USRV/"
 
 $Q echo Checking startup scripts
 
@@ -316,19 +321,7 @@ $Q echo Checking startup scripts
         (S70swupdate) ;; # empty
         (S75avahi-autoipd) ;; # host problem
         (S80resolv-watch) ;; # systemd-resolved or some other host program
-        (S82report-data-failure)
-            # get-unique-id is hard-coded to eth0, which may not even exist
-            fchg_e "$V/sbin/get-unique-id" "$R$USRV/get-unique-id" && \
-            cat >"$R$USRV/get-unique-id" <<'_'
-#!/bin/sh
-
-printf 'V%19.19s%04x\n' $(cat /etc/machine-id) $(id -u $USER)
-_
-            fln "$USRV/get-unique-id" "$R/sbin/get-unique-id"
-            # other than that we do nothing
-            # local file system monitoring is not a Venus problem
-            ;;
-
+        (S82report-data-failure) ;; # local file system monitoring is not a Venus problem
         (S90crond)
             ## host OS
             # one builtin cron script, which does automated software updates,
@@ -421,10 +414,10 @@ elif test ! -s "$LB" || test "$LA" -nt "$LB" ; then
 fi
 
 ################# random directories and links
-$Q echo Checking symlinks
 mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
-chroot "$R" chown venus $LIBV/{conf,db,log}
+chroot "$R" chown venus $LIBV/{conf,db,log,.config}
 
+$Q echo Checking symlinks
 fln -s "$MNT/lib" "$R/l"
 fln -s "lib" "$V/usr/l"
 fln -s "$MNT/opt/victronenergy" "$R/opt/victronenergy"
@@ -461,6 +454,8 @@ fln /etc/systemd/system/venus.service "$R/etc/systemd/system/network-online.targ
 
 GD="$V/opt/victronenergy/gui/gfxdrivers"
 fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
+
+fln "$USRV/get-unique-id" "$R/sbin/get-unique-id"
 
 
 ################# overlay
@@ -531,10 +526,10 @@ fi
 
 ################# udev
 
-if test ! -s "$R/etc/udev/rules.d/serial-starter.rules" ; then
+if test ! -s "$R/etc/udev/rules.d/75-venusian-serial.rules" ; then
     (
     cat <<_
-ACTION=="add", SUBSYSTEM=="tty", SUBSYSTEMS=="platform|usb-serial", RUN+="$USRV/serial-add %k"
+ACTION=="add", SUBSYSTEM=="tty", SUBSYSTEMS=="platform|usb-serial", RUN+="$USRV/bin/serial-add %k"
 _
     sed -e '/SYMLINK+=/d' -e '/RUN+=/d' "$V/etc/udev/rules.d/serial-starter.rules" 
     ) > "$R/etc/udev/rules.d/75-venusian-serial.rules"
