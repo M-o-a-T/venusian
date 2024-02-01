@@ -1,2 +1,2 @@
 #!/bin/sh
-exec sudo -u victron env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u victron)/bus /mnt/venus/usr/bin/dbus "$@"
+exec sudo -u venus env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u venus)/bus /mnt/venus/usr/bin/dbus "$@"

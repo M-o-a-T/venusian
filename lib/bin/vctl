@@ -1,2 +1,2 @@
 #!/bin/sh
-exec sudo -u victron env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u victron)/bus systemd-run  --user --scope systemctl --user "$@"
+exec sudo -u venus env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u venus)/bus systemd-run  --user --scope systemctl --user "$@"
