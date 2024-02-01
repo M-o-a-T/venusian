@@ -600,6 +600,9 @@ fi
 
 chroot "$R" /sbin/adduser venus bluetooth
 
+find "$R/$USRV" -type d -print0|xargs -0 chmod 755
+find "$R/$USRV/"{bin,opt} -type f -print0|xargs -0 chmod 755
+
 subs post
 
 test "$R" = "/" && systemctl daemon-reload
