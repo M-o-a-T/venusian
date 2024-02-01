@@ -387,6 +387,7 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
         (dbus-qwacs) continue ;; # ?
         (dbus-fronius) continue ;; # ?
         (dbus-adc) continue ;; # ?
+        (dbus-ble-sensors) continue ;; # ?
         (venus-html5-logger) continue ;; # what for?
         (gui)
             $CR "$g" Service ExecStart "$USRV/startup/$fx"
