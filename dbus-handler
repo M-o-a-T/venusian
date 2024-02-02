@@ -1,11 +1,16 @@
 #!/usr/in/python3
 
 import os
+import sys
 import click
-import socket
 import pyudev as udev
 import logging
 import time
+import re
+import pwd
+import anyio
+import socket
+from asyncdbus import MessageBus
 from pprint import pprint
 from pathlib import Path
 from contextlib import suppress
@@ -20,9 +25,8 @@ cfg_time = 0
 
 @click.command
 @click.option("-c","--config",required=True,multiple=True,type=click.Path(file_okay=True,dir_okay=False,readable=True,exists=True),  help="Config file (YAML)")
-@click.option("-s","--socket","sock",type=click.Path(), default="/run/venusian/new-device", help="Messaging socket")
 @click.option("-v","--verbose",count=True, help="Be more verbose")
-def main(config, sock, verbose):
+def main(config, verbose):
     """
     Process new Venus devices.
 
@@ -49,64 +53,63 @@ def main(config, sock, verbose):
 
     config = [ Path(f) for f in config ]
 
-    with suppress(FileNotFoundError):
-        os.unlink(sock)
-
-    h = Handler(socket=sock, config=config)
-    h.run_sync()
+    h = Handler(config=config)
+    try:
+        anyio.run(h.run, backend="trio")
+    except* KeyboardInterrupt:
+        if verbose:
+            raise
+        print("Interrupted.", file=sys.stderr)
 
 
 class Handler:
-    def __init__(self, socket: Path, config: list[Path]):
-        self.sockname = socket
+    bad_serial = re.compile(r"(\w)\1{6,}")
+
+    def __init__(self, config: list[Path]):
         self.cfg_files = config
         self.read_cfg(first=True)
+        self.buses = {}
 
         self.known = dict()
 
-    def run_sync(self):
-        s = socket.socket(family=socket.AF_UNIX, type=socket.SOCK_DGRAM, proto=0)
-        with suppress(FileNotFoundError):
-            os.unlink(self.sockname)
-        s.bind(self.sockname)
-
-        self._socket = s
-        self._udev = udev.Context()
-
-        context = udev.Context()
-        monitor = udev.Monitor.from_netlink(context)
-        monitor.filter_by(subsystem="tty")
-
-        def send_event(dev):
-            self._socket.sendto(f"{dev.action}:{dev.properties['ID_DEVNAME']}".encode("utf-8"), self.sockname)
-
-        self.observer = udev.MonitorObserver(monitor, callback=send_event)
-        self.observer.start()
+    async def run(self):
+        self._udev = context = udev.Context()
         try:
-            self._run_sync()
+            async with anyio.create_task_group() as self.tg:
+                await self._run()
         finally:
-            self.observer.stop()
+            del self.tg
+            del self._udev
 
-    def _run_sync(self):
+    async def _run(self):
+        monitor = udev.Monitor.from_netlink(self._udev)
+        monitor.filter_by(subsystem="tty")  # others?
+
+        logger.debug("processing existing devices")
         for dev in self._udev.list_devices(subsystem="tty",ID_BUS="usb",SUBSYSTEMS="platform|usb-serial"):
-            self.process_sync(dev)
-        try:
-            while True:
-                msg = self._socket.recv(1000)
-                self.read_cfg()
-                try:
-                    logger.debug("processing %r", msg)
-                    msg = msg.decode("utf-8").strip()
-                    act,name = msg.split(":", 1)
-                    if act == "add":
-                        for dev in self._udev.list_devices(subsystem="tty",SUBSYSTEMS="platform|usb-serial").match_sys_name(msg):
-                            self.process_sync(dev)
-                    elif act == "remove" and dev in self.known:
-                        self.stop_handler(dev)
-                except Exception:
-                    logger.exception("Error processing {msg !r}")
-        finally:
-            os.unlink(self.sockname)
+            await self.process(dev)
+        logger.debug("waiting for changes")
+
+        n_empty = 0
+        fd = socket.fromfd(monitor.fileno(), socket.AF_NETLINK, socket.SOCK_STREAM)
+        while True:
+            await anyio.wait_socket_readable(fd)
+            dev = monitor.poll(timeout=0)
+            if dev is None:
+                if n_empty > 3:
+                    raise RuntimeError("No bus data")
+                logger.debug("empty")
+                n_empty += 1
+                continue
+
+            n_empty = 0
+            name = dev.properties["DEVNAME"]
+            if dev.action == "add":
+                await self.process(dev)
+            elif dev.action == "remove":
+                await self.stop(name)
+            else:
+                logger.warning("Unknown action %r for %r", dev.action, name)
 
     def find_cfg(self, dev):
         prop = dev.properties
@@ -148,22 +151,95 @@ class Handler:
                 elif s is False:
                     break
                 return s, rule.get("user","venus")
+
         return None,None
 
 
-    def process_sync(self, dev):
+    async def process(self, dev):
+        name = dev.properties["DEVNAME"]
         service,user = self.find_cfg(dev)
         if service is None:
+            logger.warning("Unknown device: %r\nMatch: %s\nService: %s", name, self.recommend_match(dev), self.recommend_service(dev))
+            for k,v in dev.properties.items():
+                logger.info("  %s=%r", k,v)
             return
-        self.start_sync(name,service, user)
+        logger.info("Known device: %r: %s %s", name,service,user)
+        await self.start(name,service, user)
 
-    def start_sync(self, name, service, user):
+    def recommend_match(self, dev):
+        "return a text with match suggestions"
+        p = dev.properties
+        ser = p.get("ID_USB_SERIAL_SHORT")
+        if ser is not None and not self.bad_serial.match(ser) and "234567" not in ser and "bcdefg" not in ser.lower():
+            return f"ID_USB_SERIAL={p['ID_USB_SERIAL']}"
+        path = p.get("ID_PATH_TAG")
+        if path is not None:
+            return f"(add wildcards): ID_PATH_TAG={path}"
+        return f"(not optimal): DEVNAME={p['DEVNAME']}"
+
+    def recommend_service(self, dev):
+        p = dev.properties
+        ve = p.get("VE_SERVICE")
+        if ve is not None:
+            return ve
+
+    async def _get_bus(self, user):
+        try:
+            dbus = self.buses[user]
+        except KeyError:
+            return None
+        else:
+            while isinstance(dbus,anyio.Event):
+                await dbus.wait()
+                dbus = self.buses.get(user, None)
+            return dbus
+
+    async def _run_bus(self, user, *, task_status):
+        uid = pwd.getpwnam(user).pw_uid
+        bus = f"unix:path=/run/user/{uid}/bus"
+        dbus = await self._get_bus(user)
+        if dbus is not None:
+            task_status.started(dbus)
+            return
+
+        self.buses[user] = evt = anyio.Event()
+        try:
+            async with MessageBus(bus).connect() as dbus:
+                self.buses[user] = dbus
+                evt.set()
+                task_status.started(dbus)
+                task_status = None
+
+                await anyio.sleep_forever()
+                # assuming that the bus reader will error out and kill us
+        except Exception as exc:
+            logger.exception("dbus link for %s died: %r", user, exc)
+            if task_status is not None:
+                task_status.started(None)
+
+        finally:
+            if self.buses.get(user, None) is dbus:
+                del self.buses[user]
+
+    async def get_bus(self, user):
+        dbus = await self._get_bus(user)
+        if dbus is None:
+            dbus = await self.tg.start(self._run_bus, user)
+        return dbus
+
+    async def start(self, name, service, user, retry=False):
         if name in self.known:
             logger.error("KNOWN %s %s %s",service,user,name)
+            return
         self.known[name] = (service, user)
         logger.error("START %s %s %s",service,user,name)
+        dbus = await self.get_bus(user)
+        breakpoint()
+        pass
 
-    def stop_sync(self, name):
+
+
+    async def stop(self, name):
         try:
             service,user = self.known.pop(name)
         except KeyError:
