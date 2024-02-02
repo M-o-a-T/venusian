@@ -1,39 +1,58 @@
-
+# This is the default Venusian udev file.
+# You can override it by editing 
+# /var/lib/venusian/udev.yml
 udev:
+  # The following entries are a transcription of Victron's
+  # "serial-starter.rules" udev file.
+  #
+  # Note that Venusian does not probe! You need to add the
+  # nulled-out rules, and whatever other parameters your
+  # service needs (like the baud rate), to
+  # /var/lib/venusian/udev.yml.
+  #
   - match:
       ID_BUS: usb
       ID_MODEL: FT232R_USB_UART
-    service: rs485
+    service: null  # rs485
+
   - match: 
       ID_BUS: usb
       ID_MODEL: USB-RS485_Cable
-    service: rs485
+    service: null  # rs485
+
   - match: 
       ID_BUS: usb
       ID_MODEL: USB485_Iso_stick
-    service: rs485
+    service: null  # rs485
+
   - match: 
       ID_BUS: usb
       ID_MODEL: USB-Serial_Controller_D
-    service: cgwacs
+    service: null  # cgwacs
+
   - match: 
       ID_BUS: usb
       ID_MODEL: CP2102_USB_to_UART_Bridge_Controller
-    service: cgwacs
+    service: null  # cgwacs
+
   - match: 
       ID_BUS: usb
       ID_VENDOR_ID: "1a86"
       ID_MODEL_ID: "7523"
-    service: cgwacs
+    service: null  # cgwacs
+
   - match: 
       ID_BUS: usb
       ID_MODEL: VE_Direct_cable
     service: vedirect
+
   - match: 
       ID_BUS: usb
       ID_MODEL: FT232EX
-    service: vedirect
+    service: null  # vedirect
+
   - match: 
       ID_BUS: usb
       ID_MODEL: MK3-USB_Interface
-    service: mkx
+    service: mk3  # originally "mkx"
+
