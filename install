@@ -237,7 +237,8 @@ trap 'rm -r $temp' 0 1 2 15
 cd $temp
 umask 022
 
-LIBV=/var/lib/venus
+LIBVV=/var/lib/venusian
+LIBV=/var/lib/venusian/venus
 USRV=/usr/lib/venusian/
 
 mkdir -p "$R/opt/victronenergy"
@@ -247,7 +248,9 @@ subs pre
 # create user
 $Q echo Primary set-up
 grep -qs "^venus:" "$R/etc/group" || chroot "$R" /sbin/addgroup --system venus
-grep -qs "^venus:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus System User" venus
+grep -qs "^venusian:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBVV" --ingroup venus --system --comment "Venusian System" venusian
+grep -qs "^venus:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" venus
+
 chroot "$R" /sbin/adduser venus systemd-journal
 chroot "$R" /sbin/adduser venus dialout
 
@@ -584,6 +587,11 @@ fdo "$UD/mount.conf" || cat >"$UD/mount.conf" <<_
 [Unit]
 After=opt-victronenergy.mount $MP
 Requires=opt-victronenergy.mount $MP
+_
+
+fdo "$UD/bind.conf" || cat >"$UD/bind.conf" <<_
+[Service]
+BindPaths=/var/lib/venusian/%i:/data
 _
 
 if test -n "$MP" ; then

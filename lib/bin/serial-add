@@ -1,6 +1,6 @@
 #!/bin/sh
 
 echo "$1" >>/tmp/v-serial-add
-echo "$1" | socat STDIN UNIX-SENDTO:/run/victron/serial-add
+echo "$1" | socat STDIN UNIX-SENDTO:/run/venusian/serial-add
 # We don't use a FIFO here because that blocks when nobody's listening
-# The receiver uses "socat UNIX-RECVFROM:/run/victron/serial-add,fork STDOUT
+# The receiver uses "socat UNIX-RECVFROM:/run/venusian/serial-add,fork STDOUT
