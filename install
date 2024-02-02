@@ -574,7 +574,7 @@ fi
 
 $Q echo Setting up mount points
 
-UD="$R/etc/systemd/system/user@venus.d/"
+UD="$R/etc/systemd/system/user@venus.service.d/"
 mkdir -p $UD
 
 MP=
