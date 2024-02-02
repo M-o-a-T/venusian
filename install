@@ -371,6 +371,15 @@ _
 
 ################# Services
 
+fchg "$HERE/udev.yml" "$R/$USRV/udev.yml" || \
+    cp "$HERE/udev.yml" "$R/$USRV/udev.yml"
+fdo "$R/$LIBVV/udev.yml" ||
+    echo "udev: []" > "$R/$LIBV/udev.yml"
+for f in $(ls "$HERE/service/") ; do
+    fchg "$HERE/service/$f" "$R/$USRV/service/$f" || \
+    sed -e "s#@USRV@#$USRV#" -e "s#@LIBV@#$LIBV#" -e "s#@LIBVV@#$LIBVV#" \
+        < "$HERE/lib/service/$f" > "$R/$USRV/service/$f"
+
 T="$SY/default.target.wants"
 CR="crudini --ini-options=nospace --set"
 $Q echo Converting services
@@ -478,7 +487,7 @@ test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
 test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
 test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
-for P in lxml dbus pyudev pymodbus dnslib websockets click; do
+for P in lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus ; do
     test -d "$R/usr/lib/python3/dist-packages/$P" && continue
     I="$I python3-$P"
 done
@@ -494,6 +503,8 @@ GD="$V/opt/victronenergy/gui/gfxdrivers"
 fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
 
 fln "$USRV/get-unique-id" "$R/sbin/get-unique-id"
+
+fln "$USRV/service" "$R/$LIBV/.config/systemd/systemd.control"
 
 
 ################# overlay
