@@ -136,9 +136,8 @@ class Handler:
             else:
                 return match1(rules)
 
-
         for cfg in self.cfg:
-            cfg = cfg.get("dbus", [])
+            cfg = cfg.get("udev", [])
             for rule in cfg:
                 m = match2(rule)
                 if not m:
@@ -176,7 +175,7 @@ class Handler:
 
         for n,(c,fn) in enumerate(zip(cfg, self.cfg_files)):
             ts = fn.stat().st_ctime
-            if c.get("_t",0) != ts:
+            if c.get("_t",0) == ts:
                 continue
 
             with fn.open("r") as f:
