@@ -1,0 +1,10 @@
+[Unit]
+Description=DBUS Starter
+After=localsettings.service
+Requires=localsettings.service
+
+[Service]
+Type=simple
+ExecStart=@USRV@/bin/dbus-handler -u %u -c @LIBVV@/udev.yml -c @USRV@/udev.yml
+Restart=always
+RestartSec=15
