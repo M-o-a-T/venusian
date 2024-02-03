@@ -357,10 +357,9 @@ $Q echo Checking startup scripts
         (S99stop-bootlogd) ;; # journald
 
         (*)
-            echo "UNKNOWN startup script: $sc" >&2
+            echo "UNKNOWN startup script: $f" >&2
             exit 1 ;;
     esac
-
 done
 
 fdo "$R/$LIBV/.config/systemd/user.conf" || \
