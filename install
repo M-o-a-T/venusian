@@ -255,11 +255,12 @@ chroot "$R" /sbin/adduser venus systemd-journal
 chroot "$R" /sbin/adduser venus dialout
 
 # systemd
-SP="$LIBV/.config/systemd/user"
-SY="${R}${SP}"
-mkdir -p "$LIBV/.config"
-cp -r "$HERE/cfg/"* "$LIBV/.config/"
-mkdir -p "$SY"
+SERVICE="$USRV/service/"
+mkdir -p "$SERVICE"
+SC="$LIBV/.config/systemd/user.control"
+mkdir -p "$R/$SC/default.target.wants/"
+fln "$SERVICE" "$R/$LIBV/.config/systemd/user"
+fln ".config/systemd/user.control" "$R/$LIBV/service"
 
 # set up DBUS permissions
 for f in "$V/etc/dbus-1/system.d"/* ; do
@@ -273,7 +274,13 @@ cp -r "$HERE/lib/"* "$R$USRV/"
 
 $Q echo Checking startup scripts
 
-( ls "$V/etc/rcS.d"; ls "$V/etc/rc5.d") | while read f ; do
+lsrc() {
+    ls "$V/etc/rcS.d"
+    ls "$V/etc/rc5.d"
+}
+# not using the obvious (ls;ls)| pipe here because of a bash bug:
+# line numbers on errors below this point would be wrong
+lsrc | while read f ; do
     f="${f%.sh}"
     case "$f" in
         ### Startup scripts, rcS.d
@@ -380,13 +387,13 @@ for f in $(ls "$HERE/service/") ; do
         < "$HERE/lib/service/$f" > "$R/$USRV/service/$f"
 done
 
-T="$SY/default.target.wants"
+WANTS="$SC/default.target.wants"
 CR="crudini --ini-options=nospace --set"
 $Q echo Converting services
-mkdir -p "$T"
+mkdir -p "$WANTS"
 ls "$V/opt/victronenergy/service/" | while read f ; do
     fx="${f##*/}"
-    g="$SY/$fx.service"
+    g="$SERVICE/$fx.service"
     test -n "$FORCE" || test ! -f "$g" || continue
     case "$fx" in 
         (ppp) continue ;; # Of course not.
@@ -394,7 +401,9 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
         (simple-upnpd) continue ;; # no
         (netmon) continue ;; # avahi restart on network change
         (nginx) continue ;; # TODO teach the host OS
-        (serial-starter) continue ;; # TODO adapt to host OS
+        (serial-starter) # that's the job of dbus-handler
+            fln "$SERVICE/dbus-handler.service" "$WANTS/dbus-handler.service"
+            continue ;;
         (dbus-digitalinputs) continue ;; # TODO?
         (dbus-qwacs) continue ;; # ?
         (dbus-fronius) continue ;; # ?
@@ -421,7 +430,7 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
     $CR "$g" Service Type simple
     $CR "$g" Service Restart always
     $CR "$g" Service RestartSec 10
-    fln "$SP/$fx.service" "$T/$fx.service"
+    fln "$SERVICE/$fx.service" "$WANTS/$fx.service"
 done
 
 
