@@ -384,7 +384,7 @@ fdo "$R/$LIBVV/udev.yml" ||
 for f in $(ls "$HERE/service/") ; do
     fchg "$HERE/service/$f" "$R/$USRV/service/$f" || \
     sed -e "s#@USRV@#$USRV#" -e "s#@LIBV@#$LIBV#" -e "s#@LIBVV@#$LIBVV#" \
-        < "$HERE/lib/service/$f" > "$R/$USRV/service/$f"
+        < "$HERE/service/$f" > "$R/$USRV/service/$f"
 done
 
 WANTS="$SC/default.target.wants"
