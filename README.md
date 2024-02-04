@@ -40,31 +40,40 @@ Venus binaries run on the host system, using QEMU if necessary.
 
 The Venus subsystem uses a session DBUS, not the system's.
 
-They run as a "venus" user, not root.
+Its programs run as the user "venus", not root.
 
-The Venus system does *not* run inside a chroot environment, container, or whatever.
+The Venus system does *not* run inside a chroot environment or a container.
 
 ### OpenEmbedded libraries
 
-Venus binaries is an `armhf` system and thus uses
-`/lib/ld-linux-armhf.so.3` as its ELF loader.
+Venus is an `armhf` system; its binaries thus use
+`/lib/ld-linux-armhf.so.3` as their ELF loader.
 
-The Venusian assumes that its host is not an `armhf` system (Raspberry Pi 3
-and 4 run in 64-bit mode under Debian) and thus doesn't need to run any
-other `armhf` binaries.
+The Venusian assumes that its host is not an `armhf` system
+and doesn't need to run any other `armhf` binaries.
 
 The Venusian hijacks this loader by patching the `/lib` and `/usr/lib`
 strings that define its library search path, to `/v/l/` and `/v/u/lib`
 respectively. Appropriate symlinks then ensure that the Venus binaries use
 Venus libraries.
 
+This means that your root directory will gain `/v` and `/data` entries.
+Sorry about that; ways around this problem are being investigated.
+
+We also need to add two symlinks to `/usr/lib` (`gconv` and `fonts`)
+to convince `vedirect` and `gui` to not crash. These should not exist
+on modern Debian systems.
+
+NB: Raspberry Pi 3 and higher use `arm64` under Debian; The Venusian works on them.
+
+
 #### Alternate solution
 
 If you do need to run non-Venus `armhf` binaries, we could alternately
-patch all Venus binaries so they use a patched loader that's located
-somewhere else.
+modify the Venus binaries so their loader is in `/v/l/` instead of `/lib/`.
 
 Feel free to supply a script that does this.
+
 
 ### Venusian user
 
@@ -122,28 +131,32 @@ Details are TBD, TODO, and all that.
 
 The `install` script copies a current Venus image to a subvolume or
 subdirectory of the host system and optionally customizes it.
+You can run it live, or tell it to modify an existing system.
 
 The script accepts a couple of arguments. `dir`, `root` and `mount` are
-mandatory.
+mandatory. You need to run it as root.
 
 ### --image=/path/to/venus.img
 
-The Venus image to copy onto your Debian system.
+The Venus image to use.
 
 The file may be gzip-compressed.
 
 ### --dir=/path/to/dir
 
-The destination for the Venus image.
+The destination for the Venus image. If `--image` is given, the files are
+stored there. Otherwise they should already be there.
+
+TODO: if this is a partition, the image is copied there.
 
 ### --root=/path/to/debian
 
-The Debian system to install to. This may be the currently-running system.
+The Debian system to install to. This may be the currently-running system (use "/").
 
 ### --mount=/mnt/venus
 
-The directory which `/path/to/dir` will be bind-mounted to. This option defaults to 
-`/mnt/venus`.
+The directory which `--dir` will be bind-mounted to. This option defaults to 
+`/mnt/venus`. If you skip this option, `--dir` will be used.
 
 ### --quiet
 
@@ -155,24 +168,29 @@ Don't skip existing files.
 
 ### --sub=WHAT
 
-Also run the named scriptlets.
+Also run the named add-on, stored in the directory `install.d/WHAT`.
+This option may be used multiple times.
 
-See the "Customization" section, below, for details.
+This allows you to customize the installation without modifying
+the base script. See the "Customization" section, below, for details.
 
 ### --help
 
 Prints a summary of the options given above, as well as a list of possible
 add-ons.
 
+
 ## File system considerations
 
-The Venus file system should not be unpacked into the directory it's going
-to be used at. Instead, the preferred strategy is to unpack it to some
-other directory, then bind-mount the result.
+The Venusian needs to know where to find the files from the root file
+system on the Venus image. You can either let it unpack the image to
+wherever you'd like, or use any other convenient method to supply them,
+including over the network.
 
-This way, updates can be done in the background, requiring only a restart
-of the Venus subsystem when finished — without rebooting the host
-system.
+The Venusian does not change the Venus file system. It needs to fix a
+few minor problems, but that's with by an overlay file system.
+
+We do however need to add a few symlinks to the file system root and to /usr.
 
 
 ## Customization
