@@ -1,0 +1,10 @@
+[Unit]
+Description=Serve a VE-Direct interface on %i
+After=gui.service localsettings.service
+Requires=localsettings.service
+
+[Service]
+Type=simple
+ExecStart=/opt/victronenergy/vedirect-interface/start-vedirect.sh %i PRODUCT=VE_Direct_cable
+Restart=always
+RestartSec=5
