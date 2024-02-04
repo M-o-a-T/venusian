@@ -471,6 +471,7 @@ fln "$MNT/opt/victronenergy" "$R/opt/victronenergy"
 fln "$LIBV" "$R/data"
 fln "$LIBV/etc" "$R/etc/venus"
 fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
+fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
 
 mkdir -p "$R/v"
 chmod 755 "$R/v"
