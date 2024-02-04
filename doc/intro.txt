@@ -1,0 +1,26 @@
+TL;DR: Running Venus as part of any machine running Debian (stable) seems possible. Yes, even on x64 systems.
+
+Disclaimer, up front: yes this is a hack. It is not endorsed or supported by Victron, or anybody else (other than me) for that matter. It's also preliminary work and probably not yet(!) suited for production use.
+
+*****************
+
+I'd like to introduce:
+
+The Venusian.  https://github.com/M-o-a-T/venusian/
+
+This repository contains an installer script (plus some support files) that convince your Venus system to run on a normal Debian system, as the user "venus".
+
+It is managed with a "systemd --user" process that starts a separate dbus session.
+
+A monitor process watches udev directly and starts/stops tasks in parallel; no venus-specific udev rules are necessary (except for adding permissions, if necessary). Logging and all other debug output goes to the systemd journal as usual.
+
+I don't like probing serial ports or ModBus registers to figure out what to do. Not on every startup. It's fragile, takes time, and spams the port with garbage. Instead, a simple YAML config file tells the monitor which unit to start, and with which parameters.
+
+As a nice side effect, cleanly restarting the whole Venus system now takes just a few seconds and doesn't require a reboot. TODO: Write a "venus-update" script does all the heavy lifting so that you can do a fast and complete roll-back if there's a problem.
+
+Why am I doing this?
+
+Venus is built on top of OpenEmbedded, which I find moderately annoying. Like, Python 3.8 is about to be end-of-life, daemontools is not my cup of tea (how *do* you send your syslog data to another server with this thing? answer, you don't) , its git version is old, its kernel doesn't support basics like i²c and Victron won't change that, everything runs as root and on the system dbus, probing RS232 may or may not work … and so on.
+
+I also have a fast NAS system (one that twiddles its thumbs) sitting right beside my PV setup. While that's an amd64 box, there's qemu userspace emulation, so …
+
