@@ -88,6 +88,10 @@ fln() {
     # To link or not to link …
     SRC="$1"
     DST="$2"
+    if test -e "$DST" && ! test -L "$DST" ; then
+	    echo "ERROR: '$DST' is not a symlink. Exiting." >&2
+        exit 1
+    fi
     if test -z "$FORCE" && test -L "$DST" ; then return ; fi
     ln -sf "$SRC" "$DST"
 }
