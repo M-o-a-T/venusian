@@ -29,7 +29,7 @@ class BusError(RuntimeError):
 
 class NoSuchService(BusError):
     def __str__(self):
-        return f"Service {self.args[0]}@{self.args[1]} unknown"
+        return f"Service {self.args[0]} unknown"
 
 
 class unwrap:
@@ -116,6 +116,7 @@ class Handler:
     bad_serial = re.compile(r"(\w)\1{6,}")
 
     _intro_service = None
+    _intro_job = None
 
     def __init__(self, config: list[Path], user: str|None = None):
         self.cfg_files = config
@@ -284,16 +285,8 @@ class Handler:
         if ve is not None:
             return ve
 
-    async def start(self, name, service, retry=False):
-        if name in self.known:
-            logger.error("KNOWN %s %s",name, service)
-            return
-        sname = service["service"]
-        self.known[name] = service
-        logger.info("START %s %s",sname,name)
-        uname = f"{sname}@{name}.service"
+    async def service_for(self, uname):
         unit = await self.db_mgr.call_load_unit(uname)
-
 
         if self._intro_service is None:
             self._intro_service = await self.dbus.introspect('org.freedesktop.systemd1',unit)
@@ -303,11 +296,35 @@ class Handler:
         s = await proxy.get_interface('org.freedesktop.systemd1.Service')
         st = await u.get_load_state()
         if st == "not-found":
-            raise NoSuchService(sname,name)
-        res = await u.call_start("fail")
-        breakpoint()
-        pass
+            raise NoSuchService(uname)
+        return s,u
 
+    async def start(self, name, service, retry=False):
+        if name in self.known:
+            logger.error("KNOWN %s %s",name, service)
+            return
+        sname = service["service"]
+        self.known[name] = service
+        logger.info("START %s %s",sname,name)
+        uname = f"{sname}@{name}.service"
+
+        s,u = await self.service_for(uname)
+
+#       job = await u.call_start("fail")
+#       try:
+#           if self._intro_job is None:
+#               self._intro_job = await self.dbus.introspect('org.freedesktop.systemd1',job)
+#           jproxy = await self.dbus.get_proxy_object('org.freedesktop.systemd1', job, self._intro_job)
+#           j = await jproxy.get_interface('org.freedesktop.systemd1.Job')
+#           js = await j.get_state()
+#       except DebugException:
+#           raise
+#       except Exception:
+#           logger.error("Job %r", job)
+
+        sr = await s.get_result()
+        if sr != "success":
+            logger.error("Start %s: Job %r: %s", sname, job, sr)
 
 
     async def stop(self, name):
@@ -315,7 +332,17 @@ class Handler:
             service = self.known.pop(name)
         except KeyError:
             return
-        logger.info("STOP %s %s",service,name)
+        sname = service["service"]
+        logger.info("STOP %s %s",sname,name)
+        uname = f"{sname}@{name}.service"
+
+        s,u = await self.service_for(uname)
+        job = await u.call_stop("fail")
+
+        sr = await s.get_result()
+        if sr != "success":
+            logger.error("Stop %s: Job %r: %s", sname, job, sr)
+
 
     def read_cfg(self, first:bool = False):
         cfg = [{}] * len(self.cfg_files) if first else self.cfg
