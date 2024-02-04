@@ -1,4 +1,10 @@
-test -x $R/usr/bin/moat || I="$I moat"
+test -x "$R/usr/bin/moat" || I="$I moat"
+test -d "$R/usr/lib/python3/dist-packages/anyio_serial" || I="$I python3-anyio-serial"
+test -f "$R/usr/lib/python3/dist-packages/_pyfuse3.py" || I="$I python3-pyfuse3"
 for X in kv modbus mqtt micro ; do
-    test -x $R/usr/lib/python3/dist-packages/moat/$X || I="$I moat-$X"
+    test -d "$R/usr/lib/python3/dist-packages/moat/$X" || I="$I moat-$X"
+done
+for P in asyncscope git greenback ; do
+    test -d "$R/usr/lib/python3/dist-packages/$P" && continue
+    I="$I python3-$P"
 done
