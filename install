@@ -11,8 +11,8 @@ Usage: $0
         If '--image' is used, unpack/update the Venus image A to directory B.
         Next, modify the system at root C. The mountpoint of B on C shall be D.
 
-	The image can be a URL. The special value "-web-" downloads the current image.
-	You can also use e.g. "-web-3.14" to retrieve a specific version.
+    The image can be a URL. The special value "-web-" downloads the current image.
+    You can also use e.g. "-web-3.14" to retrieve a specific version.
 
     --verbose
         Print the steps the script executes.
@@ -24,7 +24,7 @@ Usage: $0
         Skip existing files.
 
     --no-update
-	Don't update our git submodules. (Useful while developing.)
+        Don't update our git submodules. (Useful while developing.)
 
     --sub=ADDON
         Process add-on scripts.
@@ -95,7 +95,7 @@ fln() {
     SRC="$1"
     DST="$2"
     if test -e "$DST" && ! test -L "$DST" ; then
-	    echo "ERROR: '$DST' is not a symlink. Exiting." >&2
+        echo "ERROR: '$DST' is not a symlink. Exiting." >&2
         exit 1
     fi
     if test -z "$FORCE" && test -L "$DST" ; then return ; fi
@@ -599,7 +599,7 @@ pat() { # path [sub]
     fs="$V/opt/victronenergy/$f"
     fd="$R$USRV/opt/$f"
     fchg "$fs" "$fd" || \
-	    $p < $fs > $fd
+        $p < $fs > $fd
 }
 
 (cd "$HERE/patch" ; find . -type f ) | while read f ; do
