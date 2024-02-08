@@ -114,7 +114,7 @@ def main(config, user, verbose):
 
 
 class Handler:
-    bad_serial = re.compile(r"(\w)\1{6,}")
+    bad_serial = re.compile(r"(\w)\1{7,}\b")
 
     _intro_service = None
     _intro_job = None
@@ -282,9 +282,9 @@ class Handler:
         service = self.find_cfg(dev)
         if service is None:
             logger.warning("Unknown device: %r.", name)
-            logger.warning("  possible Match: %s", self.recommend_match(dev))
-            srv = self.recommend_service(dev) or "‹unknown›"
-            logger.warning("  possible Service: %s", srv)
+            logger.warning("  possible 'match' rules:\n%s", self.recommend_match(dev))
+            srv = self.recommend_service(dev) or "modbus  # this is a wild guess"
+            logger.warning("  possible service: %s", srv)
 
             for k,v in dev.properties.items():
                 logger.info("  %s=%r", k,v)
@@ -304,12 +304,21 @@ class Handler:
         "return a text with match suggestions"
         p = dev.properties
         ser = p.get("ID_USB_SERIAL_SHORT")
-        if ser is not None and not self.bad_serial.match(ser) and "234567" not in ser and "bcdefg" not in ser.lower():
-            return f"ID_USB_SERIAL={p['ID_USB_SERIAL']}"
+        if ser and len(ser) > 3 and not self.bad_serial.match(ser) and "234567" not in ser and "bcdefg" not in ser.lower():
+            # ignore obviously-fake or broken serial numbers
+            return f"ID_USB_SERIAL: {p['ID_USB_SERIAL']}"
         path = p.get("ID_PATH_TAG")
         if path is not None:
-            return f"(add wildcards): ID_PATH_TAG={path}"
-        return f"(not optimal): sys_name={dev.sys_name}"
+            return f"""\
+ID_USB_VENDOR_ID: {p.get('ID_USB_VENDOR_ID') !r}
+ID_USB_MODEL_ID: {p.get('ID_USB_MODEL_ID') !r}
+ID_PATH_TAG: {path}  # you might want to add wildcards"""
+
+        return f"""\
+ID_USB_VENDOR_ID: {p.get('ID_USB_VENDOR_ID') !r}
+ID_USB_MODEL_ID: {p.get('ID_USB_MODEL_ID') !r}
+sys_name: {dev.sys_name}  # Try to avoid this!
+# run "udevadm info {P.get('DEVNAME')}" for more options"""
 
     def recommend_service(self, dev):
         p = dev.properties
