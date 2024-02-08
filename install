@@ -212,7 +212,7 @@ if test -n "$I" ; then
     apt install $I
 fi
 
-test -z "$SUB_UPD" || git submodule update --init
+test -z "$SUB_UPD" || git submodule update --init --recursive
 
 ################# COPY
 
