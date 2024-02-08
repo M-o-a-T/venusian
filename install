@@ -99,6 +99,7 @@ fln() {
         exit 1
     fi
     if test -z "$FORCE" && test -L "$DST" ; then return ; fi
+    rm -f "$DST"
     ln -sf "$SRC" "$DST"
 }
 
