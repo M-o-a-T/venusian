@@ -177,7 +177,7 @@ class Handler:
         envf = self.envdir / unit
         with envf.open("w") as fd:
             for k,v in env.items():
-                print(f"{k}={shlex.quote(v)}", file=fd)
+                print(f"{k}={shlex.quote(str(v))}", file=fd)
 
     async def _dbus_setup(self):
         self.intro = await self.dbus.introspect(
@@ -348,11 +348,12 @@ sys_name: {dev.sys_name}  # Try to avoid this!
         sname = service["service"]
         self.known[name] = service
         logger.info("START %s %s",sname,name)
-        uname = f"{sname}@{name}.service"
+        suname = f"{sname}@{name}"
+        uname = f"{suname}.service"
 
         env = {}
         for k,v in service.get("data",{}).items():
-            if v.startswith("@"):
+            if isinstance(v,str) and v.startswith("@"):
                 v = v[1:]
                 try:
                     v = dev.properties[v]
@@ -362,7 +363,7 @@ sys_name: {dev.sys_name}  # Try to avoid this!
             env[k] = v
 
         s,u = await self.service_for(uname)
-        self.write_env(uname,env)
+        self.write_env(suname,env)
 
         job = await u.call_start("fail")
         try:
