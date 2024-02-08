@@ -1,0 +1,12 @@
+# This file adds to the entries in /usr/lib/venusian/udev.yml
+#
+# See there for documentation.
+#
+udev:
+# Example:
+# - match:
+#     ID_USB_SERIAL: Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller_00897C7A
+#   service: modbus
+#   data:
+#     rate: 9600
+#     mode: rtu

@@ -404,7 +404,7 @@ _END_
 fchg "$HERE/udev.yml" "$R/$USRV/udev.yml" || \
     cp "$HERE/udev.yml" "$R/$USRV/udev.yml"
 fdo "$R/$LIBVV/udev.yml" ||
-    echo "udev: []" > "$R/$LIBV/udev.yml"
+    cp "$HERE/udev.example.yml" "$R/$LIBV/udev.yml"
 for f in $(ls "$HERE/service/") ; do
     fchg "$HERE/service/$f" "$R/$USRV/service/$f" || \
     sed -e "s#@USRV@#$USRV#" -e "s#@LIBV@#$LIBV#" -e "s#@LIBVV@#$LIBVV#" \
