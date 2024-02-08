@@ -342,6 +342,11 @@ Venus needs its own MQTT server.
 
 This should be possible with a custom mosquitto setup and another bunch of `iptables` rules.
 
+### Clean up the Venus copy
+
+Most of Venus is no longer required. For instance, there's 60 MBytes of Python 3.8,
+40 MBytes of opkg data, 16 MBytes of web server content … 
+
 ### Documentation
 
 This file is way too long.
