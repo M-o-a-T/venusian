@@ -20,6 +20,9 @@ Usage: $0
     --force
         Don't skip existing files.
 
+    --no-update
+	Don't update our git submodules. (Useful while developing.)
+
     --sub=ADDON
         Process add-on scripts.
 
@@ -97,7 +100,7 @@ fln() {
 }
 
 # command line processing
-TEMP=$(getopt -o 'fi:d:hr:m:qs:v' --long 'help,force,image:,dir:,root:,mount:,sub:,verbose' -n "$0" -- "$@")
+TEMP=$(getopt -o 'fi:d:hr:m:nqs:v' --long 'help,force,image:,dir:,root:,mount:,no-update,sub:,verbose' -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage >&2
 fi
@@ -112,6 +115,7 @@ Q=
 verb=
 FORCE=
 SUB=()
+SUB_UPD=y
 
 while : ; do
     case "$1" in
@@ -123,6 +127,9 @@ while : ; do
             shift ;;
         (-f|--force)
             FORCE=y
+            shift ;;
+        (-n|--no-update)
+            SUB_UPD=
             shift ;;
         (-v|--verbose)
             verb=y
@@ -190,6 +197,7 @@ if test -n "$I" ; then
     apt install $I
 fi
 
+test -z "$SUB_UPD" || git submodule update --init
 
 ################# COPY
 if [ ! -v img ] ; then
@@ -520,6 +528,7 @@ fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
 
 fln "$USRV/service" "$R/$LIBV/.config/systemd/systemd.control"
 
+make -C ext/dbus-modbus-client DESTDIR="$R/$USRV/opt" bindir=dbus-modbus-client install
 
 ################# overlay
 
