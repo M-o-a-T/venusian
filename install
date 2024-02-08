@@ -11,6 +11,9 @@ Usage: $0
         If '--image' is used, unpack/update the Venus image A to directory B.
         Next, modify the system at root C. The mountpoint of B on C shall be D.
 
+    The image can be a URL. The special value "-web-" downloads the current image.
+    You can also use e.g. "-web-3.14" to retrieve a specific version.
+
     --verbose
         Print the steps the script executes.
 
@@ -21,7 +24,7 @@ Usage: $0
         Skip existing files.
 
     --no-update
-	Don't update our git submodules. (Useful while developing.)
+        Don't update our git submodules. (Useful while developing.)
 
     --sub=ADDON
         Process add-on scripts.
@@ -92,10 +95,11 @@ fln() {
     SRC="$1"
     DST="$2"
     if test -e "$DST" && ! test -L "$DST" ; then
-	    echo "ERROR: '$DST' is not a symlink. Exiting." >&2
+        echo "ERROR: '$DST' is not a symlink. Exiting." >&2
         exit 1
     fi
     if test -z "$FORCE" && test -L "$DST" ; then return ; fi
+    rm -f "$DST"
     ln -sf "$SRC" "$DST"
 }
 
@@ -203,14 +207,34 @@ trap 'rm -r $temp' 0 1 2 15
 ################# install local requirements
 I=""
 which systemd-nspawn >/dev/null 2>&1 || I="$I systemd-container"
+which rsync >/dev/null 2>&1 || I="$I rsync"
 if test -n "$I" ; then
     $Q echo Locally installing $@
     apt install $I
 fi
 
-test -z "$SUB_UPD" || git submodule update --init
+test -z "$SUB_UPD" || git submodule update --init --recursive
 
 ################# COPY
+
+if test -v img ; then
+case "$img" in
+    (http:*|https:*) DL="$img" ;;
+    (-web-) DL=http://updates.victronenergy.com/feeds/venus/release/images/raspberrypi4/venus-image-raspberrypi4.wic.gz ;;
+    # (-web*-) DL=?? ;;  # TODO get the link from somewhere
+esac
+fi
+
+if test -v DL ; then
+    F="$temp/img"
+    if [ "${DL#.gz}" = "$DL" ] ; then
+        wget -O - "$DL" | gzip -d > "$F"
+    else
+        wget -O $F "$DL"
+    fi
+    img="$F"
+fi
+
 if [ ! -v img ] ; then
     $Q echo "No image given; not copying."
 else
@@ -403,11 +427,11 @@ _END_
 
 fchg "$HERE/udev.yml" "$R/$USRV/udev.yml" || \
     cp "$HERE/udev.yml" "$R/$USRV/udev.yml"
-fdo "$R/$LIBVV/udev.yml" ||
-    cp "$HERE/udev.example.yml" "$R/$LIBV/udev.yml"
+test -s "$R/$LIBVV/udev.yml" ||
+    cp "$HERE/udev.example.yml" "$R/$LIBVV/udev.yml"
 for f in $(ls "$HERE/service/") ; do
     fchg "$HERE/service/$f" "$R/$USRV/service/$f" || \
-    sed -e "s#@USRV@#$USRV#" -e "s#@LIBV@#$LIBV#" -e "s#@LIBVV@#$LIBVV#" \
+    sed -e "s#@USRV@#$USRV#g" -e "s#@LIBV@#$LIBV#g" -e "s#@LIBVV@#$LIBVV#g" \
         < "$HERE/service/$f" > "$R/$USRV/service/$f"
 done
 
@@ -437,7 +461,6 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
         (dbus-ble-sensors) continue ;; # ?
         (venus-html5-logger) continue ;; # what for?
         (gui)
-	        ec
             echo >>$U "ExecStart=$USRV/bin/start-gui"
             fchg "$V/opt/victronenergy/gui/start-gui.sh" "$R$USRV/bin/start-gui" ||
             sed -e 's#-f /etc/venus/headless#-e /dev/null#' \
@@ -462,6 +485,8 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
         echo >>$U "Requires=localsettings.service"
         echo >>$U "After=localsettings.service"
     fi
+    fdo "$SERVICE/$fx.service" || \
+        mv $U "$SERVICE/$fx.service"
     fln "$SERVICE/$fx.service" "$WANTS/$fx.service"
 done
 
@@ -518,6 +543,7 @@ case "$(chroot "$R" dpkg --print-architecture)" in
         ;;
     (*)
         test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
+        test -s "$R/usr/share/binfmts/qemu-arm" || I="$I qemu-user-binfmt"
         ;;
 esac
 
@@ -530,7 +556,7 @@ test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
 test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
 test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
-for P in lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus ; do
+for P in lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml ; do
     test -d "$R/usr/lib/python3/dist-packages/$P" && continue
     I="$I python3-$P"
 done
@@ -550,7 +576,7 @@ fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
 
 fln "$USRV/service" "$R/$LIBV/.config/systemd/systemd.control"
 
-make -C "$HERE/ext/dbus-modbus-client" DESTDIR="$R/$USRV/opt" bindir=dbus-modbus-client install
+make -C "$HERE/ext/dbus-modbus-client" DESTDIR="$R/$USRV/opt/" bindir=dbus-modbus-client install
 
 ################# overlay
 
@@ -575,7 +601,7 @@ pat() { # path [sub]
     fs="$V/opt/victronenergy/$f"
     fd="$R$USRV/opt/$f"
     fchg "$fs" "$fd" || \
-	    $p < $fs > $fd
+        $p < $fs > $fd
 }
 
 (cd "$HERE/patch" ; find . -type f ) | while read f ; do
@@ -623,20 +649,6 @@ _END_
     chmod 0755 "$R/etc/rc.local"
 fi
 test "$R" = "/" && systemctl restart rc-local.service
-
-
-################# udev
-
-if test ! -s "$R/etc/udev/rules.d/75-venusian-serial.rules" ; then
-    (
-    cat <<_END_
-ACTION=="add", SUBSYSTEM=="tty", SUBSYSTEMS=="platform|usb-serial", RUN+="$USRV/bin/serial-add %k"
-_END_
-    sed -e '/SYMLINK+=/d' -e '/RUN+=/d' "$V/etc/udev/rules.d/serial-starter.rules" 
-    ) > "$R/etc/udev/rules.d/75-venusian-serial.rules"
-fi
-# We're not using the Venus serial starter.
-
 
 
 ################# mountpoints
