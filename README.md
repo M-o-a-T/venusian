@@ -34,7 +34,27 @@ don't send their logs anywhere.
 … or maybe you just don't particularly like OpenEmbedded.
 
 
-## Operation
+## Usage
+
+Caveat: I do not know how to convince the GUI to bind to an address
+other than `127.0.0.1`. Thus, for external access an `iptables` rule
+is required. This rule is currently installed vi `/etc/rc.lcoal`.
+
+* Install (see below).
+* `systemctl start user@venus`
+* The Venus GUI is available on VNC port 5900.
+
+### Change the VNC port
+
+On a multi-user system, port 0 is often used for the desktop session, so you need
+to use a different port for Venus.
+
+* `echo SCREEN=3 >/etc/venusian/venus/env/gui`
+* `systemctl restart rc-local`
+* `/usr/lib/venusian/bin/vctl restart gui`
+* `for I in $() ; do iptables -t nat -D PREROUTING -i $I -p tcp --dport 5900 -j DNAT --to-destination 127.0.0.1:5900 ; done`
+
+## Background
 
 Venus binaries run on the host system, using QEMU if necessary.
 
@@ -138,16 +158,15 @@ mandatory. You need to run it as root.
 
 ### --image=/path/to/venus.img
 
-The Venus image to use.
+The Venus image to use. Skip this option if you already unpacked or mounted
+your Venus image.
 
-The file may be gzip-compressed.
+The file may be gzip-compressed; in this case you'll need sufficient space
+in /tmp for an uncompressed copy.
 
 ### --dir=/path/to/dir
 
-The destination for the Venus image. If `--image` is given, the files are
-stored there. Otherwise they should already be there.
-
-TODO: if this is a partition, the image is copied there.
+The directory where you want to save (or did save) the Venus image to.
 
 ### --root=/path/to/debian
 
@@ -155,16 +174,20 @@ The Debian system to install to. This may be the currently-running system (use "
 
 ### --mount=/mnt/venus
 
-The directory which `--dir` will be bind-mounted to. This option defaults to 
-`/mnt/venus`. If you skip this option, `--dir` will be used.
+The directory which `--dir` will be mounted to or accessible at.
+
+This path is relative to `--root`.
+
+If you skip this option *and* the root is `/`, the path from `--dir` will be used.
+Otherwise you'll need to provide it.
 
 ### --quiet
 
 Don't blabber.
 
-### --force
+### --skip
 
-Don't skip existing files.
+Skip existing files. (By default, everything is overwritten.)
 
 ### --sub=WHAT
 
@@ -179,33 +202,50 @@ the base script. See the "Customization" section, below, for details.
 Prints a summary of the options given above, as well as a list of possible
 add-ons.
 
+## Examples
 
-## File system considerations
+### Raspberry Pi SD Card
 
-The Venusian needs to know where to find the files from the root file
-system on the Venus image. You can either let it unpack the image to
-wherever you'd like, or use any other convenient method to supply them,
-including over the network.
+Let's assume you have an SD card for a Raspberry Pi 4 you'd like to Venusianize.
+
+* Copy a [Debian image](https://raspi.debian.net/tested-images/) to the card
+* Plug into your computer; ensure that the card is **not** auto-mounted
+* Use parted or fdisk to add a new partition at the end (1 GByte is sufficient)
+* grow the second partition ("RASPIROOT") to fill all available space
+* `resize2fs /dev/sdX2` (whichever sdX device your card is)
+* `mkfs.ext4 -L VENUS /dev/sdX3`
+* mount the partitions; we'll assume you use `/mnt/partN` as the targets
+* `install -i /tmp/venus.img.gz -d /mnt/part2 -t /mnt/part3 -r /mnt/venus
+* Add `LABEL=VENUS /mnt/venusian ext4 none 0 2` to `/mnt/part2/etc/fstab`
+* unmount, eject, plug into Raspberry Pi, etc..
+
+### A typical server
+
+* `git clone https://github.com/M-o-a-T/venusian.git /opt/venusian`
+* `cd /opt/venusian`
+* `./install -i /tmp/venus.img.gz -d /opt/venus -t /
+
+
+## File system structure
 
 The Venusian does not change the Venus file system. It needs to fix a
 few minor problems, but that's with by an overlay file system.
 
-We do however need to add a few symlinks to the file system root and to /usr.
+We do however need to add a few symlinks to the file system's root, and to /usr.
 
 
 ## Customization
 
-You can add your own customization steps to `install.d/NAME`. This
-directory should contain bash scriptlets that are executed within
-the `install` code.
+You can add your own customization steps to a directory `install.d/NAME`.
+It should contain bash scriptlets that are executed within the `install` script.
 
 ### Scriptlets 
 
-These customizer script names are known:
+These customizer scriptlets are used:
 
 #### pre
 
-#Runs first.
+Runs first.
 
 #### post
 
@@ -214,6 +254,9 @@ Runs last.
 #### pkg-r
 
 Packages to install in the root.
+
+Add them to the `$I` variable. Please try to test whether they're already there,
+because if so we can skip the time-consuming `apt` step.
 
 #### lib
 
@@ -234,14 +277,14 @@ hacked-up copy of the armhf ELF loader. You could use this to implement the
 * FORCE: unconditionally replace things
 
 Remember that all of these may contain spaces or other special characters.
-While we recommend not to do that, it's still good practice to quote
-**all** uses of these variables.
+While we recommend to use paths without whitespace, it's still good practice
+to quote **all** uses of these variables.
 
 
 #### Overlay file system
 
-The installer does not create a complete copy of `/opt/victronenergy`, the
-directory Victron ships its code in. Instead, an overlay file system is
+The installer does not create a complete copy of `/opt/victronenergy` (the
+directory Victron ships its code in). Instead, an overlay file system is
 used. `$OVER` contains the path to the "upper directory" of the overlay
 file system that we use to selectively alter files.
 
@@ -265,6 +308,9 @@ is a new empty file.
 
 The helper `fln` creates a symlink at ‹dest› that points to ‹source›.
 
+The overlay file system is mounted with an `opt-victronenergy.mount` systemd unit.
+
+
 ## Changes to the host system
 
 This section broadly documents the install script's changes to the host filesystem.
@@ -281,3 +327,21 @@ This section broadly documents the install script's changes to the host filesyst
 * add helpers with hardcoded paths:
   * get-unique-id (uses the host's machine ID)
 
+## TODOs
+
+Last but definitely not least, this is a work in progess.
+
+### Support for more battery managers, meters, and whatnot
+
+There are sure to be some more incompatibilities.
+Bug reports, patches and additional code gladly accepted.
+
+### MQTT
+
+Venus needs its own MQTT server.
+
+This should be possible with a custom mosquitto setup and another bunch of `iptables` rules.
+
+### Documentation
+
+This file is way too long.
