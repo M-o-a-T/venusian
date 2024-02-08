@@ -575,7 +575,7 @@ fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
 
 fln "$USRV/service" "$R/$LIBV/.config/systemd/systemd.control"
 
-make -C "$HERE/ext/dbus-modbus-client" DESTDIR="$R/$USRV/opt" bindir=dbus-modbus-client install
+make -C "$HERE/ext/dbus-modbus-client" DESTDIR="$R/$USRV/opt/" bindir=dbus-modbus-client install
 
 ################# overlay
 
