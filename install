@@ -202,7 +202,6 @@ trap 'rm -r $temp' 0 1 2 15
 
 ################# install local requirements
 I=""
-which crudini >/dev/null 2>&1 || I="$I crudini"
 which systemd-nspawn >/dev/null 2>&1 || I="$I systemd-container"
 if test -n "$I" ; then
     $Q echo Locally installing $@
@@ -413,7 +412,6 @@ for f in $(ls "$HERE/service/") ; do
 done
 
 WANTS="$SC/default.target.wants"
-CR="crudini --ini-options=nospace --set"
 $Q echo Converting services
 mkdir -p "$WANTS"
 ls "$V/opt/victronenergy/service/" | while read f ; do
