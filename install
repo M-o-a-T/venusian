@@ -425,8 +425,8 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
         (simple-upnpd) continue ;; # no
         (netmon) continue ;; # avahi restart on network change
         (nginx) continue ;; # TODO teach the host OS
-        (serial-starter) # that's the job of dbus-handler
-            fln "$SERVICE/dbus-handler.service" "$WANTS/dbus-handler.service"
+        (serial-starter) # that's the job of our udev-handler
+            fln "$SERVICE/udev-handler.service" "$WANTS/udev-handler.service"
             continue ;;
         (dbus-digitalinputs) continue ;; # TODO?
         (dbus-qwacs) continue ;; # ?
