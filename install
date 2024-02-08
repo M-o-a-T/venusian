@@ -17,8 +17,8 @@ Usage: $0
     --quiet
         Do not report what you#re doing.
 
-    --force
-        Don't skip existing files.
+    --skip
+        Skip existing files.
 
     --no-update
 	Don't update our git submodules. (Useful while developing.)
@@ -100,7 +100,7 @@ fln() {
 }
 
 # command line processing
-TEMP=$(getopt -o 'fi:d:hr:m:nqs:v' --long 'help,force,image:,dir:,root:,mount:,no-update,sub:,verbose' -n "$0" -- "$@")
+TEMP=$(getopt -o 'fi:d:hr:m:nqs:v' --long 'help,force,skip,image:,dir:,root:,mount:,no-update,sub:,verbose' -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage >&2
 fi
@@ -113,7 +113,7 @@ HERE="$(realpath "$(dirname "$0")")"
 
 Q=
 verb=
-FORCE=
+FORCE=y
 SUB=()
 SUB_UPD=y
 
@@ -127,6 +127,9 @@ while : ; do
             shift ;;
         (-f|--force)
             FORCE=y
+            shift ;;
+        (--skip)
+            FORCE=""
             shift ;;
         (-n|--no-update)
             SUB_UPD=
