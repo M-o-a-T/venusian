@@ -541,7 +541,7 @@ fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
 
 fln "$USRV/service" "$R/$LIBV/.config/systemd/systemd.control"
 
-make -C ext/dbus-modbus-client DESTDIR="$R/$USRV/opt" bindir=dbus-modbus-client install
+make -C "$HERE/ext/dbus-modbus-client" DESTDIR="$R/$USRV/opt" bindir=dbus-modbus-client install
 
 ################# overlay
 
