@@ -654,12 +654,8 @@ test "$R" = "/" && systemctl restart rc-local.service
 ################# udev
 
 if test ! -s "$R/etc/udev/rules.d/75-venusian-serial.rules" ; then
-    (
-    cat <<_END_
-ACTION=="add", SUBSYSTEM=="tty", SUBSYSTEMS=="platform|usb-serial", RUN+="$USRV/bin/serial-add %k"
-_END_
-    sed -e '/SYMLINK+=/d' -e '/RUN+=/d' "$V/etc/udev/rules.d/serial-starter.rules" 
-    ) > "$R/etc/udev/rules.d/75-venusian-serial.rules"
+    sed -e '/SYMLINK+=/d' -e '/RUN+=/d' "$V/etc/udev/rules.d/serial-starter.rules" \
+    > "$R/etc/udev/rules.d/75-venusian-serial.rules"
 fi
 # We're not using the Venus serial starter.
 
