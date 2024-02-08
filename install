@@ -207,6 +207,7 @@ trap 'rm -r $temp' 0 1 2 15
 I=""
 which crudini >/dev/null 2>&1 || I="$I crudini"
 which systemd-nspawn >/dev/null 2>&1 || I="$I systemd-container"
+which rsync >/dev/null 2>&1 || I="$I rsync"
 if test -n "$I" ; then
     $Q echo Locally installing $@
     apt install $I
