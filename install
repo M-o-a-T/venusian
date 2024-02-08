@@ -285,11 +285,14 @@ cd $temp
 umask 022
 
 LIBVV=/var/lib/venusian
-LIBV=/var/lib/venusian/venus
+LIBV=$LIBVV/venus
 USRV=/usr/lib/venusian/
 
 mkdir -p "$R/opt/victronenergy"
 mkdir -p "$R/etc/venusian/venus/env"
+mkdir -p "$R/etc/venus"
+mkdir -p "$R/data"
+mkdir -p "$R/$USRV"/{opt,.opt}
 
 subs pre
 
@@ -317,7 +320,6 @@ for f in "$V/etc/dbus-1/system.d"/* ; do
     sed <"$f" >"$g"  -e 's/"root"/"venus"/'
 done
 
-mkdir -p "$R$USRV"/{opt,.opt}
 cp -r "$HERE/lib/"* "$R$USRV/"
 
 $Q echo Checking startup scripts
@@ -526,8 +528,6 @@ fln "$MNT/lib" "$R/l"
 fln "lib" "$V/usr/l"
 # fln "$MNT/opt/victronenergy" "$R/opt/victronenergy"
 test -e "$R/opt/victronenergy" || ln -s "$MNT/opt/victronenergy" "$R/opt/victronenergy"
-fln "$LIBV" "$R/data"
-fln "$LIBV/etc" "$R/etc/venus"
 fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
 fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
 
@@ -670,6 +670,7 @@ _END_
 fdo "$UD/bind.conf" || cat >"$UD/bind.conf" <<_END_
 [Service]
 BindPaths=/var/lib/venusian/%i:/data
+BindPaths=/var/lib/venusian/%i/etc:/etc/venus
 _END_
 
 if test -n "$MP" ; then
