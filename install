@@ -172,9 +172,13 @@ if [ ! -v root ] && [ $# -gt 0 ] ; then
     root="$1"
     shift
 fi
-if [ ! -v MNT ] && [ $# -gt 0 ] ; then
-    MNT="$1"
-    shift
+if [ ! -v MNT ] ; then
+    if [ $# -gt 0 ] ; then
+        MNT="$1"
+        shift
+    else
+        MNT="$dir"
+    fi
 fi
 
 if [ ! -v dir ] ; then
@@ -185,6 +189,11 @@ fi
 if test "$verb" = "y" ; then
     Q=":"
     set -x
+fi
+
+if [ $# -gt 0 ] ; then
+    echo "Superfluous arguments. ???" >&2
+    exit 1
 fi
 
 temp=$(mktemp -d)
