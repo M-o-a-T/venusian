@@ -11,6 +11,9 @@ Usage: $0
         If '--image' is used, unpack/update the Venus image A to directory B.
         Next, modify the system at root C. The mountpoint of B on C shall be D.
 
+	The image can be a URL. The special value "-web-" downloads the current image.
+	You can also use e.g. "-web-3.14" to retrieve a specific version.
+
     --verbose
         Print the steps the script executes.
 
@@ -212,6 +215,26 @@ fi
 test -z "$SUB_UPD" || git submodule update --init
 
 ################# COPY
+
+DL=
+if test -n "$img" ; then
+case "$img" in
+    (http:*|https:*) DL="$img" ;;
+    (-web-) DL=http://updates.victronenergy.com/feeds/venus/release/images/raspberrypi4/venus-image-raspberrypi4.wic.gz ;;
+    # (-web*-) DL=?? ;;  # TODO get the link from somewhere
+esac
+fi
+
+if test -n "$DL" ; then
+    F="$temp/img"
+    if [ "${DL#.gz}" = "$DL" ] ; then
+        wget -O - "$DL" | gzip -d > "$F"
+    else
+        wget -O $F "$DL"
+    fi
+    img="$F"
+fi
+
 if [ ! -v img ] ; then
     $Q echo "No image given; not copying."
 else
