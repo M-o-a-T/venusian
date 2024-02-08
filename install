@@ -461,7 +461,6 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
         (dbus-ble-sensors) continue ;; # ?
         (venus-html5-logger) continue ;; # what for?
         (gui)
-	        ec
             echo >>$U "ExecStart=$USRV/bin/start-gui"
             fchg "$V/opt/victronenergy/gui/start-gui.sh" "$R$USRV/bin/start-gui" ||
             sed -e 's#-f /etc/venus/headless#-e /dev/null#' \
