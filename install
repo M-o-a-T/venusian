@@ -485,6 +485,8 @@ ls "$V/opt/victronenergy/service/" | while read f ; do
         echo >>$U "Requires=localsettings.service"
         echo >>$U "After=localsettings.service"
     fi
+    fdo "$SERVICE/$fx.service" || \
+        mv $U "$SERVICE/$fx.service"
     fln "$SERVICE/$fx.service" "$WANTS/$fx.service"
 done
 
