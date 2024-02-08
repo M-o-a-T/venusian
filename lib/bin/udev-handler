@@ -259,7 +259,9 @@ class Handler:
                 return match1(rules)
 
         for cfg in self.cfg:
-            cfg = cfg.get("udev", [])
+            cfg = cfg.get("udev", None)
+            if not cfg:
+                continue
             for rule in cfg:
                 m = match2(rule)
                 if not m:
