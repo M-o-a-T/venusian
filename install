@@ -538,6 +538,7 @@ GD="$V/opt/victronenergy/gui/gfxdrivers"
 fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
 
 fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
+fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
 
 fln "$USRV/service" "$R/$LIBV/.config/systemd/systemd.control"
 
