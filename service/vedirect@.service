@@ -8,3 +8,5 @@ Type=simple
 ExecStart=/opt/victronenergy/vedirect-interface/start-vedirect.sh %i PRODUCT=VE_Direct_cable
 Restart=always
 RestartSec=5
+EnvironmentFile=-/run/user/%U/env/%p
+EnvironmentFile=-/run/user/%U/env/%N

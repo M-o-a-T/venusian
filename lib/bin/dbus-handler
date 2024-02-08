@@ -1,4 +1,4 @@
-#!/usr/in/python3
+#!/usr/bin/python3
 
 from __future__ import annotations
 
@@ -12,7 +12,8 @@ import re
 import pwd
 import anyio
 import socket
-from asyncdbus import MessageBus, Message
+import shlex
+from asyncdbus import MessageBus, Message, Variant
 from pprint import pprint
 from pathlib import Path
 from contextlib import suppress
@@ -125,8 +126,12 @@ class Handler:
             user = os.environ["USER"]
         self.uid = pwd.getpwnam(user).pw_uid
         self.user = user
+        self.envdir = Path(f"/run/user/{self.uid}/env")
+        self.envdir.mkdir(exist_ok=True)
 
         self.known = dict()
+        self._reload_done = None
+        self._reload_evt = anyio.Lock()
 
     async def run(self):
         bus = f"unix:path=/run/user/{self.uid}/bus"
@@ -146,6 +151,33 @@ class Handler:
                 del self._udev
                 del self.tg
                 del self.dbus
+
+#   async def reload(self):
+#       "reload systemd"
+
+#       if self._reload is not None:
+#           # Currently reloading. Wait for it to finish.
+#           await self._reload.wait()
+#           if self._reload is not None:
+#               # Another task was faster. Wait for its reload to finish.
+#               await self._reload.wait()
+#               return
+
+#       self._reload = anyio.Event()
+#       logger.error("Reload Start")
+#       await self.db_mgr.call_reload()
+#       logger.error("Reload Done")
+
+#       self._reload.set()
+#       self._reload = None
+
+    def write_env(self,unit,env):
+        "write a service's environment file."
+
+        envf = self.envdir / unit
+        with envf.open("w") as fd:
+            for k,v in env.items():
+                print(f"{k}={shlex.quote(v)}", file=fd)
 
     async def _dbus_setup(self):
         self.intro = await self.dbus.introspect(
@@ -260,7 +292,7 @@ class Handler:
         logger.info("Known device: %r: %s", name,service["service"])
         try:
             with unwrap:
-                await self.start(name,service)
+                await self.start(name,service,dev)
         except DebugException:
             raise
         except BusError as exc:
@@ -292,14 +324,15 @@ class Handler:
             self._intro_service = await self.dbus.introspect('org.freedesktop.systemd1',unit)
         proxy = await self.dbus.get_proxy_object('org.freedesktop.systemd1', unit, self._intro_service)
 
-        u = await proxy.get_interface('org.freedesktop.systemd1.Unit')
         s = await proxy.get_interface('org.freedesktop.systemd1.Service')
+        u = await proxy.get_interface('org.freedesktop.systemd1.Unit')
+        # p = await proxy.get_interface('org.freedesktop.DBus.Properties')
         st = await u.get_load_state()
         if st == "not-found":
             raise NoSuchService(uname)
-        return s,u
+        return s,u #,p
 
-    async def start(self, name, service, retry=False):
+    async def start(self, name, service, dev, retry=False):
         if name in self.known:
             logger.error("KNOWN %s %s",name, service)
             return
@@ -308,19 +341,33 @@ class Handler:
         logger.info("START %s %s",sname,name)
         uname = f"{sname}@{name}.service"
 
-        s,u = await self.service_for(uname)
+        env = {}
+        for k,v in service.get("data",{}).items():
+            if v.startswith("@"):
+                v = v[1:]
+                try:
+                    v = dev.properties[v]
+                except KeyError:
+                    v = getattr(dev, v)
+            k = k.upper()
+            env[k] = v
 
-#       job = await u.call_start("fail")
-#       try:
-#           if self._intro_job is None:
-#               self._intro_job = await self.dbus.introspect('org.freedesktop.systemd1',job)
-#           jproxy = await self.dbus.get_proxy_object('org.freedesktop.systemd1', job, self._intro_job)
-#           j = await jproxy.get_interface('org.freedesktop.systemd1.Job')
-#           js = await j.get_state()
-#       except DebugException:
-#           raise
-#       except Exception:
-#           logger.error("Job %r", job)
+        s,u = await self.service_for(uname)
+        self.write_env(uname,env)
+
+        job = await u.call_start("fail")
+        try:
+            if self._intro_job is None:
+                self._intro_job = await self.dbus.introspect('org.freedesktop.systemd1',job)
+            jproxy = await self.dbus.get_proxy_object('org.freedesktop.systemd1', job, self._intro_job)
+            j = await jproxy.get_interface('org.freedesktop.systemd1.Job')
+            js = await j.get_state()
+        except DebugException:
+            raise
+        except Exception as exc:
+            logger.error("Job %s: %r", job, exc)
+        else:
+            logger.error("Job %s: %s", job, js)
 
         sr = await s.get_result()
         if sr != "success":
@@ -374,6 +421,8 @@ class Handler:
 
 if __name__ == "__main__":
     try:
-        main()
-    except DebugException:
-        pass
+        with unwrap:
+            main()
+    except (DebugException,KeyboardInterrupt):
+        print("Interrupted.", file=sys.stderr)
+        sys.exit(1)

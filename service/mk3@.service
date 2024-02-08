@@ -8,3 +8,5 @@ Type=simple
 ExecStart=/opt/victronenergy/mk2-dbus/start-mk2-dbus.sh %i PRODUCT=MK3-USB_Interface
 Restart=always
 RestartSec=5
+EnvironmentFile=-/run/user/%U/env/%p
+EnvironmentFile=-/run/user/%U/env/%N
