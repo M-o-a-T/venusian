@@ -543,6 +543,7 @@ case "$(chroot "$R" dpkg --print-architecture)" in
         ;;
     (*)
         test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
+        test -s "$R/usr/share/binfmts/qemu-arm" || I="$I qemu-user-binfmt"
         ;;
 esac
 
