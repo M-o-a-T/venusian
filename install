@@ -431,7 +431,7 @@ test -s "$R/$LIBVV/udev.yml" ||
     cp "$HERE/udev.example.yml" "$R/$LIBVV/udev.yml"
 for f in $(ls "$HERE/service/") ; do
     fchg "$HERE/service/$f" "$R/$USRV/service/$f" || \
-    sed -e "s#@USRV@#$USRV#" -e "s#@LIBV@#$LIBV#" -e "s#@LIBVV@#$LIBVV#" \
+    sed -e "s#@USRV@#$USRV#g" -e "s#@LIBV@#$LIBV#g" -e "s#@LIBVV@#$LIBVV#g" \
         < "$HERE/service/$f" > "$R/$USRV/service/$f"
 done
 
