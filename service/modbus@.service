@@ -1,0 +1,13 @@
+[Unit]
+Description=Serve an MK3 interface on %i
+After=gui.service localsettings.service
+Requires=localsettings.service
+
+[Service]
+Type=simple
+ExecStart=/opt/victronenergy/dbus-modbus-client/dbus-modbus-client.py -s %i -r ${RATE} -m ${MODE}
+Restart=always
+RestartSec=5
+Environment=MODE=rtu
+EnvironmentFile=-/run/user/%U/env/%p
+EnvironmentFile=-/run/user/%U/env/%N

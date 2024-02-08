@@ -1,0 +1,3 @@
+[submodule "ext/dbus-modbus-client"]
+	path = ext/dbus-modbus-client
+	url = https://github.com/M-o-a-T/dbus-modbus-client.git
