@@ -216,8 +216,7 @@ test -z "$SUB_UPD" || git submodule update --init --recursive
 
 ################# COPY
 
-DL=
-if test -n "$img" ; then
+if test -v img ; then
 case "$img" in
     (http:*|https:*) DL="$img" ;;
     (-web-) DL=http://updates.victronenergy.com/feeds/venus/release/images/raspberrypi4/venus-image-raspberrypi4.wic.gz ;;
@@ -225,7 +224,7 @@ case "$img" in
 esac
 fi
 
-if test -n "$DL" ; then
+if test -v DL ; then
     F="$temp/img"
     if [ "${DL#.gz}" = "$DL" ] ; then
         wget -O - "$DL" | gzip -d > "$F"
