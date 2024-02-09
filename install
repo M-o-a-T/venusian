@@ -157,8 +157,6 @@ _END_
 mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
 chroot "$R" chown -R $NAME $LIBV/{etc,conf,db,log,.config}
 
-fln "$USRV/service" "$R/$LIBV/.config/systemd/systemd.control"
-
 VPW="$R$LIBV/conf/vncpassword.txt"
 if test ! -s "$VPW" ; then
     read -s -p "VNC password: " pwd </dev/tty >/dev/tty 2>&1
