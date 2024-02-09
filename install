@@ -452,8 +452,7 @@ lsrc | while read f ; do
         (S90gpio_pins) ;; # empty list
         (S90machine-conf) ;; # not on RPi
         (S99custom-rc-early)
-            # runs /data/rcS.local
-            # possible TODO
+            # TODO run /data/rcS.local
             ;;
 
 ### Startup scripts, rc5.d
@@ -492,13 +491,12 @@ lsrc | while read f ; do
 
         (S95svscanboot)
             # SVC
-            # TODO convert to systemd
+            # TODO convert to systemd?
             ;;
         (S98scan-versions) ;; # alternate root file systems
         (S99check-updates) ;; # system update check
         (S99custom-rc-late)
-            # run /data/rc.local
-            # possible TODO
+            # TODO run /data/rc.local
             ;;
         (S99rmnologin) ;; # systemd
         (S99stop-bootlogd) ;; # journald
