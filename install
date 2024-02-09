@@ -689,8 +689,8 @@ _END_
 pat() { # path [sub]
     p="$1"
     f="$(realpath --relative-to "$2" "$1")"
-    fs="$OPTVIC/$f"
-    fd="$R$USRV/opt/$f"
+    fs="$DEST/opt/victronenergy/$f"
+    fd="$OPTVIC/$f"
     fchg "$fs" "$fd" || \
         $p < $fs > $fd
 }
