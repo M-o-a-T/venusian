@@ -142,19 +142,25 @@ Our solution is different.
 
 ### Multi-site operation 
 
-It should be possible to run more than one Venus instance on the same host.
+It should be possible to run more than one Venus instance on the same host,
+mostly thanks to systemd magic that bind-mounts the `/var/lib/venusian/NAME`
+directory to `/data`.
 
-Details are TBD, TODO, and all that.
+There's one piece of common infrastructure: the MQTT server. Running one per
+Venus instance is on the TODO list. As soon as that's done, multi-user should
+Just Work.
 
 
 ## Installation
 
 The `install` script copies a current Venus image to a subvolume or
-subdirectory of the host system and optionally customizes it.
-You can run it live, or tell it to modify an existing system.
+subdirectory of the host system.
 
 The script accepts a couple of arguments. `dir`, `root` and `mount` are
 mandatory. You need to run it as root.
+
+The Venus installation will be copied to the host system as-is. It won't
+be modified.
 
 ### --image=/path/to/venus.img
 
@@ -163,6 +169,10 @@ your Venus image.
 
 The file may be gzip-compressed; in this case you'll need sufficient space
 in /tmp for an uncompressed copy.
+
+The special value "--image=-web-" downloads the current Venus version.
+The image will be deleted after it's unpacked.
+
 
 ### --dir=/path/to/dir
 
@@ -340,13 +350,26 @@ Bug reports, patches and additional code gladly accepted.
 
 Venus needs its own MQTT server.
 
-This should be possible with a custom mosquitto setup and another bunch of `iptables` rules.
+This should be possible with a custom mosquitto setup and another bunch of
+`iptables` rules; also, these really should be moved to systemd units instead of
+mangling `/etc/rc.local`.
 
 ### Clean up the Venus copy
 
-Most of Venus is no longer required. For instance, there's 60 MBytes of Python 3.8,
-40 MBytes of opkg data, 16 MBytes of web server content … 
+Much of the original Venus file system is no longer required and can be deleted
+to free some space. For instance, there's 60 MBytes of kernel modules,
+60 MBytes of Python 3.8, 40 MBytes of opkg data, 15 MBytes of web server content,
+and almost all of `/bin` and `/usr/bin`.
+
+Original image's root file system: 350 MB, 100 MB compressed; cleaned up: around
+70 MBytes, uncompressed.
 
 ### Documentation
 
 This file is way too long.
+
+### Installation
+
+When installing a specific version, find the corresponding image. This is
+not trivial because on Victron's server the file name has a timestamp along
+with the file name.
