@@ -278,9 +278,6 @@ if [ ! -v MNT ] ; then
     MNT="${DEST:-/}"
 fi
 
-SCREEN=$(next_vnc $NAME)
-MNT_U=$(systemd-escape -m "$MNT")
-
 if [ -v NAME ] ; then
     if [ ! -v DEST ] ; then
         gen_user $NAME
@@ -289,6 +286,9 @@ if [ -v NAME ] ; then
 else
     NAME=venus
 fi
+
+SCREEN=$(next_vnc $NAME)
+MNT_U=$(systemd-escape -m "$MNT")
 
 if [ ! -v DEST ] ; then
     echo "A directory for/with the Venus file system is required." >&2
