@@ -1,3 +1,4 @@
 #!/bin/sh
 
-cat /etc/machine-id
+head -13c /etc/machine-id
+printf '%04x\n' $(id -u)
