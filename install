@@ -658,6 +658,7 @@ esac
 
 test -s "$R/usr/bin/pstree" || I="$I psmisc"
 test -s "$R/usr/bin/sudo" || I="$I sudo"
+test -s "$R/usr/bin/make" || I="$I make"
 test -s "$R/usr/sbin/iptables" || I="$I iptables"
 test -s "$R/usr/sbin/mosquitto" || I="$I mosquitto"
 test -s "$R/usr/bin/socat" || I="$I socat"
@@ -685,7 +686,7 @@ fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
 fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
 fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
 
-make -C "$HERE/ext/dbus-modbus-client" DESTDIR="$R/$USRV/opt/" bindir=dbus-modbus-client install
+make -s -C "$HERE/ext/dbus-modbus-client" DESTDIR="$R/$USRV/opt/" bindir=dbus-modbus-client install
 
 ################# overlay
 
