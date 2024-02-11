@@ -1,9 +1,12 @@
 #!/bin/bash
 
 set -eu
-P=$(( 5900 + $SCREEN ))
 
-for I in $(ls /sys/class/net) ; do
-    if [ "$I" = "lo" ] ; then continue ; fi
-    iptables -t nat -D PREROUTING -i $I -p tcp --dport $P -j DNAT --to-destination 127.0.0.1:$P
-done
+if [ -v SCREEN ] ; then
+    P=$(( 5900 + $SCREEN ))
+
+    for I in $(ls /sys/class/net) ; do
+        if [ "$I" = "lo" ] ; then continue ; fi
+        iptables -t nat -D PREROUTING -i $I -p tcp --dport $P -j DNAT --to-destination 127.0.0.1:$P
+    done
+fi
