@@ -2,6 +2,8 @@
 
 set -u
 
+HERE="$(realpath "$(dirname "$0")")"
+
 usage() {
     cat <<_END_
 Usage: $0
@@ -204,8 +206,6 @@ fi
 set -e
 eval set -- "$TEMP"
 unset TEMP
-
-HERE="$(realpath "$(dirname "$0")")"
 
 Q=
 verb=
