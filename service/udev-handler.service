@@ -8,5 +8,6 @@ Type=simple
 ExecStart=@USRV@/bin/udev-handler -u %u -c @LIBVV@/udev.yml -c @USRV@/udev.yml
 Restart=always
 RestartSec=15
+EnvironmentFile=-/etc/venusian/vars
 EnvironmentFile=-/etc/venusian/%u/env/%N
 EnvironmentFile=-/run/user/%U/env/%N

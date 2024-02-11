@@ -8,6 +8,7 @@ Type=simple
 ExecStart=/opt/victronenergy/vedirect-interface/start-vedirect.sh %i PRODUCT=VE_Direct_cable
 Restart=always
 RestartSec=5
+EnvironmentFile=-/etc/venusian/vars
 EnvironmentFile=-/etc/venusian/%u/env/%p
 EnvironmentFile=-/etc/venusian/%u/env/%N
 EnvironmentFile=-/run/user/%U/env/%p

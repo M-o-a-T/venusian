@@ -9,6 +9,7 @@ ExecStart=/opt/victronenergy/dbus-modbus-client/dbus-modbus-client.py -s %i -r $
 Restart=always
 RestartSec=5
 Environment=MODE=rtu
+EnvironmentFile=-/etc/venusian/vars
 EnvironmentFile=-/etc/venusian/%u/env/%p
 EnvironmentFile=-/etc/venusian/%u/env/%N
 EnvironmentFile=-/run/user/%U/env/%p
