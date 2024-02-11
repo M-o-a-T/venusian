@@ -40,9 +40,12 @@ Usage: $0
     --sub=ADDON
         Process add-on scripts.
 
-        Available additions:
+  Available additions:
 _END_
-    ls $HERE/install.d
+    ls -1 "$HERE/install.d" | while read d ; do echo -n "      $d  ";
+        READ="$HERE/install.d/$d/README"
+        if test -f "$READ" ; then head -1 "$READ"; else echo "‹no README file›"; fi
+    done
     exit 1
 }
 
