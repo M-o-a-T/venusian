@@ -49,10 +49,8 @@ is required. This rule is currently installed vi `/etc/rc.lcoal`.
 On a multi-user system, port 0 is often used for the desktop session, so you need
 to use a different port for Venus.
 
-* `echo SCREEN=3 >/etc/venusian/venus/env/gui`
-* `systemctl restart rc-local`
-* `/usr/lib/venusian/bin/vctl restart gui`
-* `for I in $() ; do iptables -t nat -D PREROUTING -i $I -p tcp --dport 5900 -j DNAT --to-destination 127.0.0.1:5900 ; done`
+* `echo SCREEN=3 >>/etc/venusian/venus/vars`
+* `systemctl restart user@venus`
 
 ## Background
 
@@ -233,6 +231,50 @@ Let's assume you have an SD card for a Raspberry Pi 4 you'd like to Venusianize.
 * `git clone https://github.com/M-o-a-T/venusian.git /opt/venusian`
 * `cd /opt/venusian`
 * `./install -i /tmp/venus.img.gz -d /opt/venus -t /
+* systemctl start user@venus
+* vncclient localhost:1
+
+You'll also need to adapt /
+
+
+## helper scripts
+
+All scripts are located in `/usr/lib/venusian/bin`. You can add this
+directory to your path, or use shell aliases.
+
+### get-unique-id
+
+This is the script Venus uses to generate a unique ID, originally by using
+the MAC address of `eth0`.
+
+There are problems with this approach; some hosts don't have an `eth0`,
+others might use a dynamic MAC for privacy. It's also not multi-user capable.
+
+The Venusian uses a prefix of the machine ID and adds a the user ID (in hex).
+You can add a "MACHID=XXX" line to `/etc/venusian/vars` or `/etc/venusian/NAME/vars`
+if you want to override it. Note that the latter file includes the user ID.
+
+### ven
+
+`ven XXX` runs `XXX` as the user "venus". You can use "-u NAME" to switch to
+a different user.
+
+This helper is required because a mere `sudo -u venus` doesn't connect you to
+the user's DBus.
+
+### vctl
+
+Alias to `ven systemctl --user`. The "-u NAME" option is accepted.
+
+### vbus
+
+Alias to `ven dbus`. The "-u NAME" option is accepted.
+
+"dbus" is a script from Victron that's much nicer than the
+standard dbus-send program.
+
+
+## Environment settings
 
 
 ## File system structure

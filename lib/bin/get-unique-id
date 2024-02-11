@@ -1,4 +1,18 @@
 #!/bin/sh
 
-head -13c /etc/machine-id
-printf '%04x\n' $(id -u)
+set -eu
+unset MACHID
+
+test -v USER || USER=$(id -un)
+F=/etc/venusian/$USER/vars
+test ! -f $F || . $F
+if test -v MACHID ; then
+    echo $MACHID
+    exit 0
+fi
+
+test -v UID || UID=$(id -u)
+F=/etc/venusian/vars
+test ! -f $F || . $F
+test -v MACHID || MACHID=$(head -13c /etc/machine-id)
+printf '%s%04x\n' $MACHID $UID

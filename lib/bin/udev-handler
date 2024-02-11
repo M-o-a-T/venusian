@@ -126,7 +126,7 @@ class Handler:
             user = os.environ["USER"]
         self.uid = pwd.getpwnam(user).pw_uid
         self.user = user
-        self.envdir = Path(f"/run/user/{self.uid}/env")
+        self.envdir = Path(f"/run/user/{self.uid}")
         self.envdir.mkdir(exist_ok=True)
 
         self.known = dict()

@@ -181,7 +181,7 @@ local UD="/etc/systemd/system/user@$NAME.service.d/"
 local EV="/etc/venusian/$NAME"
 
 mkdir -p "$R/$UD"
-mkdir -p "$R/$EV/env"
+mkdir -p "$R/$EV"
 
 fcat "$R/$UD/venusian.conf" <<_END_
 [Unit]
@@ -193,7 +193,7 @@ BindPaths=/var/lib/venusian/%i:/data
 BindPaths=/var/lib/venusian/%i/etc:/etc/venus
 
 EnvironmentFile=-/etc/venusian/vars
-EnvironmentFile=$EV/vars
+EnvironmentFile=-$EV/vars
 
 ExecStartPost=+$USRV/bin/iptables_on
 ExecStopPost=+$USRV/bin/iptables_off
@@ -583,8 +583,10 @@ starters | while read f ; do
     echo >>$U "Restart=always"
     echo >>$U "RestartSec=10"
     echo >>$U "EnvironmentFile=-/etc/venusian/vars"
-    echo >>$U "EnvironmentFile=-/etc/venusian/%u/env/%N"
-    echo >>$U "EnvironmentFile=-/run/user/%U/env/%N"
+    echo >>$U "EnvironmentFile=-/etc/venusian/%u/vars"
+    echo >>$U "EnvironmentFile=-/etc/venusian/%u/%N"
+    echo >>$U "EnvironmentFile=-/run/user/%U/vars"
+    echo >>$U "EnvironmentFile=-/run/user/%U/%N"
     if [ "$fx" != "localsettings" ] ; then
         echo >>$U ""
         echo >>$U "[Unit]"

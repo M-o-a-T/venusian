@@ -10,7 +10,9 @@ Restart=always
 RestartSec=5
 Environment=MODE=rtu
 EnvironmentFile=-/etc/venusian/vars
-EnvironmentFile=-/etc/venusian/%u/env/%p
-EnvironmentFile=-/etc/venusian/%u/env/%N
-EnvironmentFile=-/run/user/%U/env/%p
-EnvironmentFile=-/run/user/%U/env/%N
+EnvironmentFile=-/etc/venusian/%u/vars
+EnvironmentFile=-/etc/venusian/%u/%p
+EnvironmentFile=-/etc/venusian/%u/%N
+EnvironmentFile=-/run/user/%U/vars
+EnvironmentFile=-/run/user/%U/%p
+EnvironmentFile=-/run/user/%U/%N
