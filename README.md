@@ -142,14 +142,13 @@ Our solution is different.
 
 ### Multi-site operation 
 
-It should be possible to run more than one Venus instance on the same host,
+It is possible to run more than one Venus instance on the same host,
 mostly thanks to systemd magic that bind-mounts the `/var/lib/venusian/NAME`
 directory to `/data`.
 
-There's one piece of common infrastructure: the MQTT server. Running one per
-Venus instance is on the TODO list. As soon as that's done, multi-user should
-Just Work.
-
+Venus' MQTT topics are prefixed by the output of `get-unique-id`. We modify
+this script to include the user ID, so using a single server
+for multiple Venus instance poses no problem.
 
 ## Installation
 
@@ -346,13 +345,6 @@ Last but definitely not least, this is a work in progess.
 There are sure to be some more incompatibilities.
 Bug reports, patches and additional code gladly accepted.
 
-### MQTT
-
-Venus needs its own MQTT server.
-
-This should be possible with a custom mosquitto setup and another bunch of
-`iptables` rules; also, these really should be moved to systemd units instead of
-mangling `/etc/rc.local`.
 
 ### Clean up the Venus copy
 
