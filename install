@@ -303,7 +303,9 @@ MNT_U=$(systemd-escape -m "$MNT")
 
 if [ ! -v DEST ] ; then
     echo "A directory for/with the Venus file system is required." >&2
-    echo "(Use the '--dest PATH' option.) Exiting." >&2
+    echo "(Use the '--dest PATH' option.)" >&2
+    echo "" >&2
+    usage >&2
     exit 2
 fi
 
