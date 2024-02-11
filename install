@@ -535,7 +535,11 @@ done
 WANTS="$SERVICE/default.target.wants"
 $Q echo Converting services
 mkdir -p "$WANTS"
-ls "$DEST/opt/victronenergy/service/" | while read f ; do
+starters() {
+    ls -1 "$DEST/opt/victronenergy/service/"
+    echo dbus-mqtt
+}
+starters | while read f ; do
     fx="${f##*/}"
     g="$SERVICE/$fx.service"
     test -n "$FORCE" || test ! -f "$g" || continue
@@ -557,6 +561,9 @@ ls "$DEST/opt/victronenergy/service/" | while read f ; do
         (dbus-adc) continue ;; # ?
         (dbus-ble-sensors) continue ;; # ?
         (venus-html5-logger) continue ;; # what for?
+        (dbus-mqtt)
+            echo >>$U ExecStart=/opt/victronenergy/dbus-mqtt/dbus_mqtt.py
+            ;;
         (gui)
             echo >>$U "ExecStart=$USRV/bin/start-gui"
             fchg "$DEST/opt/victronenergy/gui/start-gui.sh" "$R$USRV/bin/start-gui" ||
@@ -656,6 +663,7 @@ test -s "$R/usr/bin/socat" || I="$I socat"
 test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
 test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
 test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
+test -d "$R/usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
 test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
 for P in lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml ; do
