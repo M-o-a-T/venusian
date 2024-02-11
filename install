@@ -754,6 +754,17 @@ _END_
     fi
 fi
 
+
+################# Mosquitto
+
+
+fcat "$R/etc/mosquitto/conf.d/venusian.conf" \
+    systemctl restart mosquitto <<_END_
+listener 40990 127.0.0.1
+allow_anonymous true
+_END_
+
+
 ################# finish
 
 find "$R/$USRV" -type d -print0|xargs -0 chmod 755

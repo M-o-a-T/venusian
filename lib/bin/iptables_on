@@ -13,6 +13,10 @@ if [ -v SCREEN ] ; then
     sysctl net.ipv4.ip_forward=1
 fi
 
+if [ ! -v MQTT ] ; then
+    MQTT="127.0.0.1:$( expr 41000 + $UID )"
+fi
+
 if [ -v MQTT ] ; then
     iptables -t nat -I OUTPUT -o lo -p tcp -m owner --uid-owner $UID -m tcp --dport 1883 -j DNAT --to-destination $MQTT
 fi

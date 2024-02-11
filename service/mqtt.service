@@ -1,0 +1,13 @@
+[Unit]
+Description=Mosquitto server
+After=localsettings.service
+Requires=localsettings.service
+
+[Service]
+Type=simple
+ExecStart=@USRV@/bin/start-mqtt
+Restart=always
+RestartSec=15
+EnvironmentFile=-/etc/venusian/vars
+EnvironmentFile=-/etc/venusian/%u/env/%N
+EnvironmentFile=-/run/user/%U/env/%N
