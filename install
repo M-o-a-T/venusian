@@ -687,8 +687,8 @@ mkdir -p "$NTW"
 fln /lib/systemd/system/user@.service "$NTW/user@venus.service"
 fln /etc/systemd/system/venus.service "$R/etc/systemd/system/network-online.target.wants/venus.service"
 
-GD="$DEST/opt/victronenergy/gui/gfxdrivers"
-fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
+fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$OPTVIC/gui/gfxdrivers"
+fln "$MNT/usr/lib/qml/QtQml" "$OPTVIC/gui/qt-components/qml/QtQml"
 
 fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
 fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
