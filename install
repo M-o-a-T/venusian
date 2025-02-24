@@ -24,7 +24,9 @@ Usage: $0
         If '--image' is used, unpack the Venus image A into directory B.
         Next, modify the system at root C. The mountpoint of B on C shall be D.
 
-        The image can be a URL. The special value "-web-" downloads the current image.
+        The image can be a URL. The special value "-web-" downloads the current image,
+        "-rc-" uses the latest release candidate.
+
         Using "-web-3.14" to retrieve a specific version is on the TODO list.
 
     --verbose
@@ -342,6 +344,7 @@ if test -v img ; then
 case "$img" in
     (http:*|https:*) DL="$img" ;;
     (-web-) DL=http://updates.victronenergy.com/feeds/venus/release/images/raspberrypi4/venus-image-raspberrypi4.wic.gz ;;
+    (-rc-) DL=http://updates.victronenergy.com/feeds/venus/candidate/images/raspberrypi4/venus-image-raspberrypi4.wic.gz ;;
     # (-web*-) DL=?? ;;  # TODO get the link from somewhere
 esac
 fi
