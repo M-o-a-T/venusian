@@ -449,6 +449,7 @@ lsrc | while read f ; do
         (S10overlays) ;; # done later
         (S20static-nodes) ;; # systemd
         (S29read-only-rootfs-hook) ;; # volatile /var/lib
+        (S30clean-data) ;; # drop large log file
         (S36bootmisc) ;; # various system stuff
         (S37populate-volatile)
             # systemd
