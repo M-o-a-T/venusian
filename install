@@ -320,9 +320,6 @@ if [ $# -gt 0 ] ; then
     exit 2
 fi
 
-temp=$(mktemp -d)
-trap 'rm -r $temp' 0 1 2 15
-
 ################# install local requirements
 I=""
 which systemd-nspawn >/dev/null 2>&1 || I="$I systemd-container"
@@ -387,9 +384,9 @@ trap 'umount $temp/dir; losetup -d $ld; rm -r $temp' 0 1 2 15
 
 rsync -a --numeric-ids --perms --inplace "$temp/dir/." "$DEST/."
 echo "Copy/sync finished."
-trap "" 0 1 2 15
 
-umount $temp/dir; losetup -d $ld; rm -r $temp
+umount $temp/dir; losetup -d $ld
+trap 'rm -r $temp' 0 1 2 15
 fi
 ################# END COPY
 
@@ -752,7 +749,11 @@ Options=bind
 _END_
     elif [ "$(realpath "$R/$MNT")" != "$(realpath "$DEST")" ] ; then
         echo "** You need to configure mounting $MNT manually **" >&2
+    else
+        MNT_U=
     fi
+else
+    MNT_U=
 fi
 
 ################# finish
