@@ -566,14 +566,7 @@ starters | while read f ; do
             echo >>$U ExecStart=/opt/victronenergy/dbus-mqtt/dbus_mqtt.py
             ;;
         (gui)
-            echo >>$U "ExecStart=$USRV/bin/start-gui"
-            fchg "$DEST/opt/victronenergy/gui/start-gui.sh" "$R$USRV/bin/start-gui" ||
-            sed -e 's#-f /etc/venus/headless#-e /dev/null#' \
-                -e 's/mouse=-mouse/mouse=-nomouse/ '\
-                -e 's/send --system/send --session/ '\
-                -e 's#^scriptdir=.*#scriptdir=/opt/victronenergy/gui# '\
-                -e 's#:0 #${SCREEN:-0} # '\
-                < "$DEST/opt/victronenergy/gui/start-gui.sh" > "$R$USRV/bin/start-gui"
+            echo >>$U ExecStart="$USRV/bin/start-gui"
             ;;
         (*)
             echo >>$U ExecStart=/opt/victronenergy/service/$fx/run

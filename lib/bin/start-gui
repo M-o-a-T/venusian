@@ -1,0 +1,12 @@
+#!/bin/sh
+exec 2>&1
+
+echo "*** Starting gui ***"
+
+export QT_QPA_PLATFORM=vnc:size=480x300:addr=127.0.0.1:port=$(expr 5900 + $SCREEN)
+export QT_PLUGIN_PATH=/v/u/lib/plugins
+
+here=$(dirname $0)
+exec ${here}/gui
+
+
