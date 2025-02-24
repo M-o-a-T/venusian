@@ -690,6 +690,7 @@ fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
 fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
 fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
 
+fln "$MNT/etc/profile.d" "$R/etc/venus/profile.d"
 
 ################# overlay
 
