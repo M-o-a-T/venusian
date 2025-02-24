@@ -36,18 +36,15 @@ don't send their logs anywhere.
 
 ## Usage
 
-Caveat: I do not know how to convince the GUI to bind to an address
-other than `127.0.0.1`. Thus, for external access an `iptables` rule
-is required. This rule is currently installed vi `/etc/rc.lcoal`.
-
 * Install (see below).
 * `systemctl start user@venus`
-* The Venus GUI is available on VNC port 5900.
+* The Venus GUI is available on VNC port 5901.
+
+For external network access, you either need an `iptables` rule is required.
 
 ### Change the VNC port
 
-On a multi-user system, port 0 is often used for the desktop session, so you need
-to use a different port for Venus.
+If port 1 is in use:
 
 * `echo SCREEN=3 >>/etc/venusian/venus/vars`
 * `systemctl restart user@venus`
@@ -64,25 +61,23 @@ The Venus system does *not* run inside a chroot environment or a container.
 
 ### OpenEmbedded libraries
 
-Venus is an `armhf` system; its binaries thus use
-`/lib/ld-linux-armhf.so.3` as their ELF loader.
+Venus (yes, even on Raspberry Pi 4) is an `armhf` system; its binaries thus
+use `/lib/ld-linux-armhf.so.3` as their ELF loader.
 
 The Venusian assumes that its host is not an `armhf` system
 and doesn't need to run any other `armhf` binaries.
 
-The Venusian hijacks this loader by patching the `/lib` and `/usr/lib`
-strings that define its library search path, to `/v/l/` and `/v/u/lib`
-respectively. Appropriate symlinks then ensure that the Venus binaries use
-Venus libraries.
+The Venusian hijacks this `armhf` loader by patching the `/lib` and
+`/usr/lib` strings that define its library search path, to `/v/l/` and
+`/v/u/lib` respectively. Appropriate symlinks then ensure that the Venus
+binaries use Venus libraries.
 
 This means that your root directory will gain `/v` and `/data` entries.
 Sorry about that; ways around this problem are being investigated.
 
 We also need to add two symlinks to `/usr/lib` (`gconv` and `fonts`)
-to convince `vedirect` and `gui` to not crash. These should not exist
-on modern Debian systems.
-
-NB: Raspberry Pi 3 and higher use `arm64` under Debian; The Venusian works on them.
+to convince `vedirect` and `gui` to not crash. These directories should not
+exist on modern Debian systems, so there's no problem.
 
 
 #### Alternate solution
@@ -90,18 +85,19 @@ NB: Raspberry Pi 3 and higher use `arm64` under Debian; The Venusian works on th
 If you do need to run non-Venus `armhf` binaries, we could alternately
 modify the Venus binaries so their loader is in `/v/l/` instead of `/lib/`.
 
-Feel free to supply a script that does this.
+Patches welcome.
 
 
 ### Venusian user
 
-The Venusian system runs as the user `venusian`. It's controlled by a
+The Venusian system runs as the user `venus`. It's controlled by a
 user-level systemd instance and uses that user's session dbus instead of
 the system's.
 
 Thus, a simple `systemctl restart user@venus` restarts the whole Venus
 subsystem cleanly, without requiring a possibly-risky reboot that takes an
 order of magnitude longer and is much more disruptive.
+
 
 ### Devices ("udev")
 
@@ -144,9 +140,9 @@ It is possible to run more than one Venus instance on the same host,
 mostly thanks to systemd magic that bind-mounts the `/var/lib/venusian/NAME`
 directory to `/data`.
 
-Venus' MQTT topics are prefixed by the output of `get-unique-id`. We modify
-this script to include the user ID, so using a single server
-for multiple Venus instance poses no problem.
+Venus' MQTT topics are prefixed by the output of `get-unique-id`, which
+returns the system's UUID. We modify this script to include the user ID.
+
 
 ## Installation
 
@@ -158,6 +154,7 @@ mandatory. You need to run it as root.
 
 The Venus installation will be copied to the host system as-is. It won't
 be modified.
+
 
 ### --image=/path/to/venus.img
 
@@ -171,13 +168,15 @@ The special value "--image=-web-" downloads the current Venus version.
 The image will be deleted after it's unpacked.
 
 
-### --dir=/path/to/dir
+### --dest=/path/to/dir
 
 The directory where you want to save (or did save) the Venus image to.
+This option is mandatory unless you're creating a new Venusian user.
 
 ### --root=/path/to/debian
 
-The Debian system to install to. This may be the currently-running system (use "/").
+The Debian installation to install to. This may be the currently-running
+system (use "/").
 
 ### --mount=/mnt/venus
 
@@ -190,7 +189,11 @@ Otherwise you'll need to provide it.
 
 ### --quiet
 
-Don't blabber.
+Don't report print the script is doing (high-level).
+
+### --verbose
+
+Report shell commands as the installer executes them.
 
 ### --skip
 
@@ -233,8 +236,6 @@ Let's assume you have an SD card for a Raspberry Pi 4 you'd like to Venusianize.
 * `./install -i /tmp/venus.img.gz -d /opt/venus -t /
 * systemctl start user@venus
 * vncclient localhost:1
-
-You'll also need to adapt /
 
 
 ## helper scripts
