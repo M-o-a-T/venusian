@@ -718,7 +718,14 @@ pat() { # path [sub]
     fs="$DEST/opt/victronenergy/$f"
     fd="$OPTVIC/$f"
     fchg "$fs" "$fd" || \
-        $p < $fs > $fd
+        if test -x $p ; then
+            $p < $fs > $fd
+        else
+            ft="$temp/$(basename "$fd")"
+            cp "$fs" "$ft"
+            patch $ft < $p
+            cp "$ft" "$fd"
+        fi
 }
 
 find "$HERE/patch" -type f | while read f ; do
