@@ -649,6 +649,9 @@ chmod 755 "$R/v"
 fln "$MNT/lib" "$R/v/l"
 fln "$MNT/usr" "$R/v/u"
 
+mkdir -p "$OPTVIC/gui"
+chmod 755 "$OPTVIC/gui"
+
 I=""
 case "$(chroot "$R" dpkg --print-architecture)" in
     (arm64|armhf)
