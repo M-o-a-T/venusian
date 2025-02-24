@@ -690,7 +690,6 @@ fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$GD"
 fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
 fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
 
-make -s -C "$HERE/ext/dbus-modbus-client" DESTDIR="$R/$USRV/opt/" bindir=dbus-modbus-client install
 
 ################# overlay
 
