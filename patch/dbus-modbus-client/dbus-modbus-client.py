@@ -33,15 +33,15 @@
  
  MODBUS_TCP_PORT = 502
  
-@@ -424,9 +440,9 @@
+@@ -424,9 +440,10 @@
  
      if args.serial:
          tty = os.path.basename(args.serial)
 -        client = SerialClient(tty, args.rate, args.mode)
 +        client = SerialClient(tty, args.rate, args.mode, **timeout_arg)
      else:
--        client = NetClient()
-+        client = NetClient(**timeout_arg)
+         client = NetClient()
++        # client = NetClient(**timeout_arg)
  
      client.err_exit = args.exit
      client.init(args.force_scan)
