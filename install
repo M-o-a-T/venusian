@@ -635,7 +635,7 @@ test -e "$R/opt/victronenergy" || mkdir -p "$R/opt/victronenergy"
 fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
 fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
 
-# if /o/v is a mountpoint, assume that it's an overlay,
+# if /o/v is a mountpoint, assume that it's our overlay,
 # thus we write to that. Otherwise we write to the overlay's
 # top directory.
 if mountpoint -q "$R/opt/victronenergy" ; then
