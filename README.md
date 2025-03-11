@@ -224,8 +224,8 @@ Let's assume you have an SD card for a Raspberry Pi 4 you'd like to Venusianize.
 * grow the second partition ("RASPIROOT") to fill all available space
 * `resize2fs /dev/sdX2` (whichever sdX device your card is)
 * `mkfs.ext4 -L VENUS /dev/sdX3`
-* mount the partitions; we'll assume you use `/mnt/partN` as the targets
-* `install -i /tmp/venus.img.gz -d /mnt/part2 -t /mnt/part3 -r /mnt/venus
+* mount the partitions; we'll assume you use `/mnt/part2` as the target
+* `install -i /tmp/venus.img.gz -d /mnt/part2 -r /mnt/venus
 * Add `LABEL=VENUS /mnt/venusian ext4 none 0 2` to `/mnt/part2/etc/fstab`
 * unmount, eject, plug into Raspberry Pi, etc..
 
@@ -233,7 +233,7 @@ Let's assume you have an SD card for a Raspberry Pi 4 you'd like to Venusianize.
 
 * `git clone https://github.com/M-o-a-T/venusian.git /opt/venusian`
 * `cd /opt/venusian`
-* `./install -i /tmp/venus.img.gz -d /opt/venus -t /
+* `./install -i /tmp/venus.img.gz -d /opt/venus -r /
 * systemctl start user@venus
 * vncclient localhost:1
 
