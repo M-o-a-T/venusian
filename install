@@ -45,6 +45,14 @@ Usage: $0
     --sub=ADDON
         Process add-on scripts.
 
+    --repo SOURCE
+        Use this URL to fetch a sources.list file for additional Debian packages.
+        Use "--repo -" to disable.
+        The result will be stored in /etc/apt/sources.list.d/venusian.list
+
+    --repo-key PUBKEYFILE
+        Use this URL to fetch the GPG signature file associated with REPO.
+
   Available additions:
 _END_
     ls -1 "$HERE/install.d" | while read d ; do echo -n "      $d  ";
@@ -210,7 +218,7 @@ subs user
 }
 
 # command line processing
-TEMP=$(getopt -o 'fi:d:hr:m:nqs:u:v' --long 'help,force,skip,image:,dest:,root:,mount:,no-update,sub:,user:,verbose' -n "$0" -- "$@")
+TEMP=$(getopt -o 'fi:d:hr:m:nqs:u:v' --long 'help,force,skip,image:,dest:,root:,mount:,no-update,repo:,repo-key:,sub:,user:,verbose' -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage >&2
 fi
@@ -225,6 +233,8 @@ root=/
 FORCE=y
 SUB=()
 SUB_UPD=y
+REPO=http://build.smurf.noris.de/info/smurf.list
+REPOKEY=http://build.smurf.noris.de/info/smurf.archive.gpg
 unset NAME DEST MNT img
 
 while : ; do
@@ -261,6 +271,12 @@ while : ; do
             shift 2 ;;
         (-m|--mount)
             MNT="$2"
+            shift 2 ;;
+        (--repo)
+            REPO="$2"
+            shift 2 ;;
+        (--repo-key)
+            REPOKEY="$2"
             shift 2 ;;
         (-s|--sub)
             if test -d "$HERE/install.d/$2" ; then 
@@ -431,6 +447,19 @@ for f in "$DEST/etc/dbus-1/system.d"/* ; do
 done
 
 cp -r "$HERE/lib/"* "$R$USRV/"
+
+if [ "X$REPO" != "X-" ] ; then
+    $Q echo "Adding repository (some packages are not yet in Debian)"
+
+    test -s "$R/etc/apt/trusted.gpg.d/venusian.archive.gpg" || wget -q -O "$R/etc/apt/trusted.gpg.d/venusian.archive.gpg" $REPOKEY
+    test -s "$R/etc/apt/sources.list.d/venusian.list" || wget -q -O "$R/etc/apt/sources.list.d/venusian.list" $REPO
+fi
+
+if test "$R" = "/" ; then
+    apt update
+else
+    systemd-nspawn -D "$R" apt update
+fi
 
 $Q echo Checking startup scripts
 
@@ -663,6 +692,8 @@ case "$(chroot "$R" dpkg --print-architecture)" in
         ;;
 esac
 
+test -s "$R/usr/bin/flashmq" || I="$I flashmq"
+test -s "$R/usr/libexec/flashmq/libflashmq-dbus-plugin.so" || I="$I dbus-flashmq"
 test -s "$R/usr/bin/pstree" || I="$I psmisc"
 test -s "$R/usr/bin/sudo" || I="$I sudo"
 test -s "$R/usr/bin/make" || I="$I make"
