@@ -502,6 +502,7 @@ lsrc | while read f ; do
         (S03mountall) ;; # host OS
         (S03test-data-partition) ;; # host problem
         (S04udev) ;; # host
+        (S05checkroot) ;; # host
         (S05modutils) ;; # host
         (S06alignment) ;; # host; mode 3 for alignment fixes (repair+complain)
         (S06checkroot) ;; # host
@@ -575,7 +576,11 @@ lsrc | while read f ; do
         (S99stop-bootlogd) ;; # journald
 
         (*)
-            echo "UNKNOWN startup script: $f" >&2
+            cat <<_ >/dev/stderr
+UNKNOWN: startup script: $f
+
+Please read the "Errors" section of our README.
+_
             exit 1 ;;
     esac
 done

@@ -212,6 +212,26 @@ the base script. See the "Customization" section, below, for details.
 Prints a summary of the options given above, as well as a list of possible
 add-ons.
 
+## Installation errors
+
+Note that the destination directory contains the *unmodified* Venus sources.
+Any changes which the installer applies are done with an overlay directory.
+
+### Unknown startup script
+
+Read the script (in `$DEST/etc/rcS.d` or `$DEST/etc/rc5.d`) to check what it does.
+
+Open the `install` script, find the line `### Startup scripts`. If it does
+something The Venusian needs to replicate, write a service file and add it
+to our `service` directory. Otherwise, simply add a do-nothing entry with
+a short comment.
+
+### Patch failures
+
+The Venusian currently doesn't handle multiple versions of the Venus source
+files in a reasonable way. We're working on it.
+
+
 ## Examples
 
 ### Raspberry Pi SD Card
