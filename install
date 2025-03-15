@@ -814,7 +814,7 @@ pat() { # path [sub]
     local f="$(realpath --relative-to "$2" "$1")"
     local fs="$DEST/opt/victronenergy/$f"
     local fd="$OPTVIC/$f"
-    if ! test -s "$fs" ; then continue; fi
+    if ! test -s "$fs" ; then return; fi
     p="$(vfind $p)"
     fchg "$fs" "$fd" || \
         if test -x $p ; then
