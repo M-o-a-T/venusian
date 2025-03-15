@@ -221,7 +221,7 @@ subs user
 }
 
 # command line processing
-TEMP=$(getopt -o 'fi:d:hm:nqr:Rs:u:v?' --long 'dest:,force,help,image:,mount:,no-update,replace,repo:,repo-key:,root:,skip,sub:,user:,verbose' -n "$0" -- "$@")
+TEMP=$(getopt -o 'fFi:d:hm:nqr:Rs:u:v?' --long 'dest:,fast,force,help,image:,mount:,no-update,replace,repo:,repo-key:,root:,skip,sub:,user:,verbose' -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage >&2
 fi
@@ -239,7 +239,7 @@ SUB_UPD=y
 REPO=http://build.smurf.noris.de/info/smurf.list
 REPOKEY=http://build.smurf.noris.de/info/smurf.archive.gpg
 replace=
-unset NAME DEST MNT img
+unset NAME DEST MNT img fast
 
 while : ; do
     case "$1" in
@@ -251,6 +251,9 @@ while : ; do
             shift ;;
         (-f|--force)
             FORCE=y
+            shift ;;
+        (-F|--fast)
+            fast=y
             shift ;;
         (--skip)
             FORCE=""
@@ -478,10 +481,12 @@ if [ "X$REPO" != "X-" ] ; then
     test -s "$R/etc/apt/sources.list.d/venusian.list" || wget -q -O "$R/etc/apt/sources.list.d/venusian.list" $REPO
 fi
 
-if test "$R" = "/" ; then
-    apt update
-else
-    systemd-nspawn -D "$R" apt update
+if ! test -v fast ; then
+    if test "$R" = "/" ; then
+        apt update
+    else
+        systemd-nspawn -D "$R" apt update
+    fi
 fi
 
 $Q echo Checking startup scripts
