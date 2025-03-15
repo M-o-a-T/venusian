@@ -221,7 +221,7 @@ subs user
 }
 
 # command line processing
-TEMP=$(getopt -o 'fi:d:hr:m:nqs:u:v' --long 'help,force,skip,image:,dest:,root:,mount:,no-update,repo:,repo-key:,sub:,user:,verbose' -n "$0" -- "$@")
+TEMP=$(getopt -o 'fi:d:hm:nqr:Rs:u:v?' --long 'dest:,force,help,image:,mount:,no-update,replace,repo:,repo-key:,root:,skip,sub:,user:,verbose' -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage >&2
 fi
@@ -243,7 +243,7 @@ unset NAME DEST MNT img
 
 while : ; do
     case "$1" in
-        (-h|--help)
+        (-h|-\?|--help)
             usage;
             exit 0 ;;
         (-q|--quiet)
