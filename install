@@ -503,7 +503,7 @@ lsrc | while read f ; do
         (S03test-data-partition) ;; # host problem
         (S04udev) ;; # host
         (S05checkroot) ;; # host
-        (S05modutils) ;; # host
+        (S0?modutils) ;; # host
         (S06alignment) ;; # host; mode 3 for alignment fixes (repair+complain)
         (S06checkroot) ;; # host
         (S06devpts) ;; # host
