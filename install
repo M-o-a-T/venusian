@@ -768,7 +768,7 @@ mkdir -p "$NTW"
 fln /lib/systemd/system/user@.service "$NTW/user@venus.service"
 fln /etc/systemd/system/venus.service "$R/etc/systemd/system/network-online.target.wants/venus.service"
 
-mkdir -p "$OPTVIC/gui/qt-components/qml/QtQml"
+mkdir -p "$OPTVIC/gui/qt-components/qml"
 fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$OPTVIC/gui/gfxdrivers"
 fln "$MNT/usr/lib/qml/QtQml" "$OPTVIC/gui/qt-components/qml/QtQml"
 
