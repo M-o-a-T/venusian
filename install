@@ -39,6 +39,9 @@ Usage: $0
     --skip
         Skip existing files.
 
+    --replace
+        Delete the existing Venusian installation before unpacking the new image.
+
     --no-update
         Don't update our git submodules. (Useful while developing.)
 
@@ -235,6 +238,7 @@ SUB=()
 SUB_UPD=y
 REPO=http://build.smurf.noris.de/info/smurf.list
 REPOKEY=http://build.smurf.noris.de/info/smurf.archive.gpg
+replace=
 unset NAME DEST MNT img
 
 while : ; do
@@ -256,6 +260,9 @@ while : ; do
             shift ;;
         (-v|--verbose)
             verb=y
+            shift ;;
+        (-R|--replace)
+            replace=y
             shift ;;
         (-u|--user)
             NAME="$2"
@@ -344,6 +351,14 @@ if [ $# -gt 0 ] ; then
     exit 2
 fi
 
+if [ -d "DEST" ] && [ -v img ]; then
+    if [ -z "$replace" ] ; then
+        echo "Existing image found. Either add '--replace', or don't use '--image'." >&2
+        exit 2
+    fi
+    btrfs subvol delete "$DEST" || rm -rf "$DEST"
+fi
+
 ################# install local requirements
 I=""
 which systemd-nspawn >/dev/null 2>&1 || I="$I systemd-container"
@@ -420,6 +435,10 @@ fi
 if test -f "$root" ; then
     echo TODO root as an Image >&2
     exit 1
+fi
+if test -d "$USRV" && test -n "$replace"; then
+    $Q echo Removing previous installation
+    rm -r "$USRV"
 fi
 
 DEST="$(realpath "$DEST")"
