@@ -432,6 +432,10 @@ fi
 
 
 ################# SETUP
+if ! VERS=$(sed -ne 's/.* \(v[0-9]\.[0-9][0-9]*\).*/\1/p' <"$DEST/etc/issue") ; then
+    echo Could not detect the Venus version in "'$DEST/etc/issue'" >&2
+    exit 1
+fi
 if test -f "$root" ; then
     echo TODO root as an Image >&2
     exit 1
@@ -772,6 +776,8 @@ pat() { # path [sub]
     f="$(realpath --relative-to "$2" "$1")"
     fs="$DEST/opt/victronenergy/$f"
     fd="$OPTVIC/$f"
+    if ! test -s "$fs" ; then continue; fi
+    if test -s "$p.$VERS" ; then p="$p.$VERS"; fi
     fchg "$fs" "$fd" || \
         if test -x $p ; then
             $p < $fs > $fd
