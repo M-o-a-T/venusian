@@ -354,9 +354,24 @@ if [ $# -gt 0 ] ; then
     exit 2
 fi
 
-if [ -d "DEST" ] && [ -v img ]; then
+if [ -d "$USRV" ]; then
     if [ -z "$replace" ] ; then
-        echo "Existing image found. Either add '--replace', or don't use '--image'." >&2
+        echo "Existing installation found ($USRV). Use '--replace'." >&2
+        exit 2
+    fi
+    echo -n "Stopping Venusian users: "
+    ls /etc/venusian | while read u ; do 
+        systemctl stop user@$u || true
+        echo -n "$u "
+    done
+    echo "."
+    umount /opt/victronenergy || true
+    rm -r "$USRV"
+fi
+
+if [ -d "$DEST" ] && [ -v img ]; then
+    if [ -z "$replace" ] ; then
+        echo "Existing image found ($DEST). Either add '--replace', or don't use '--image'." >&2
         exit 2
     fi
     btrfs subvol delete "$DEST" || rm -rf "$DEST"
@@ -442,10 +457,6 @@ fi
 if test -f "$root" ; then
     echo TODO root as an Image >&2
     exit 1
-fi
-if test -d "$USRV" && test -n "$replace"; then
-    $Q echo Removing previous installation
-    rm -r "$USRV"
 fi
 
 DEST="$(realpath "$DEST")"
@@ -701,7 +712,13 @@ fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
 # thus we write to that. Otherwise we write to the overlay's
 # top directory.
 if mountpoint -q "$R/opt/victronenergy" ; then
-    OPTVIC="$R/opt/victronenergy"
+    if ! [ -d "$R/opt/victronenergy/gui" ] ; then
+        echo "'$R/opt/victronenergy' is mounted but empty. Unmounting." >&2
+        umount "$R/opt/victronenergy"
+        OPTVIC="$R/$USRV/opt"
+    else
+        OPTVIC="$R/opt/victronenergy"
+    fi
 else
     OPTVIC="$R/$USRV/opt"
 fi
