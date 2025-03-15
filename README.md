@@ -228,8 +228,14 @@ a short comment.
 
 ### Patch failures
 
-The Venusian currently doesn't handle multiple versions of the Venus source
-files in a reasonable way. We're working on it.
+The Venusian handles multiple versions of the Venus source files.
+To handle a conflict:
+
+* create a directory 'patchname.V' if necessary
+* copy the old patch to 'patchname.V/vX.YZ' (with X.YZ being the last Venus
+  release to which it applied cleanly)
+* fix the patch
+* commit the files to git, create a pull request
 
 
 ## Examples

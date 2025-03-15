@@ -776,13 +776,24 @@ _END_
 # Patch filters are located in $HERE/patch and $HERE.install.d/NAME/patch.
 # Their relative path is appended to /opt/victronenergy: that file is patched.
 
+vfind() { # file
+    local p="$1"
+    if [ ! -d "$p.V" ] ; then echo $p; return 0; fi
+    while read v ; do
+        if ! [ $v \< $VERS ] ; then
+            echo $p.V/$v; return 0
+        fi
+    done < <(ls "$p.V" | sort)
+    echo $p; return 0
+}
+
 pat() { # path [sub]
-    p="$1"
-    f="$(realpath --relative-to "$2" "$1")"
-    fs="$DEST/opt/victronenergy/$f"
-    fd="$OPTVIC/$f"
+    local p="$1"
+    local f="$(realpath --relative-to "$2" "$1")"
+    local fs="$DEST/opt/victronenergy/$f"
+    local fd="$OPTVIC/$f"
     if ! test -s "$fs" ; then continue; fi
-    if test -s "$p.$VERS" ; then p="$p.$VERS"; fi
+    p="$(vfind $p)"
     fchg "$fs" "$fd" || \
         if test -x $p ; then
             $p < $fs > $fd
