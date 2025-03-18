@@ -1,0 +1,2 @@
+test -s "$R/usr/bin/flashmq" || I="$I flashmq"
+test -s "$R/usr/libexec/flashmq/libflashmq-dbus-plugin.so" || I="$I dbus-flashmq"

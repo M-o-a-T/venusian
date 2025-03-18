@@ -1,0 +1,1 @@
+chroot "$R" systemctl enable flashmq

@@ -746,8 +746,6 @@ case "$(chroot "$R" dpkg --print-architecture)" in
         ;;
 esac
 
-test -s "$R/usr/bin/flashmq" || I="$I flashmq"
-test -s "$R/usr/libexec/flashmq/libflashmq-dbus-plugin.so" || I="$I dbus-flashmq"
 test -s "$R/usr/bin/pstree" || I="$I psmisc"
 test -s "$R/usr/bin/sudo" || I="$I sudo"
 test -s "$R/usr/bin/make" || I="$I make"
