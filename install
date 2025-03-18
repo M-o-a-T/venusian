@@ -65,6 +65,10 @@ _END_
     exit 1
 }
 
+if [ "$(id -u)" != 0 ] ; then
+    echo "This script needs to run as root. Sorry." >&2
+    exit 1"
+fi
 
 apti() {
    R="$1"
