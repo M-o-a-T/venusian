@@ -1,6 +1,6 @@
 [submodule "ext/dbus-flashmq"]
 	path = ext/dbus-flashmq
-	url = git@github.com:M-o-a-T/dbus-flashmq.git
+	url = https://github.com/M-o-a-T/dbus-flashmq.git
 [submodule "ext/flashmq"]
 	path = ext/flashmq
-	url = git@github.com:M-o-a-T/flashmq.git
+	url = https://github.com/M-o-a-T/flashmq.git
