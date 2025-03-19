@@ -378,7 +378,7 @@ if [ -d "$DEST" ] && [ -v img ]; then
         echo "Existing image found ($DEST). Either add '--replace', or don't use '--image'." >&2
         exit 2
     fi
-    btrfs subvol delete "$DEST" || rm -rf "$DEST"
+    btrfs subvol delete "$DEST" 2>/dev/null || rm -rf "$DEST"
 fi
 
 ################# install local requirements
@@ -426,7 +426,7 @@ $Q echo Copying image
 if test -d "$DEST" ; then
    :
 else
-   btrfs subvol cre "$DEST" || mkdir "$DEST"
+   btrfs subvol cre "$DEST" 2>/dev/null || mkdir "$DEST"
 fi
 
 # if the image is compressed, unpack it
