@@ -42,6 +42,21 @@ don't send their logs anywhere.
 
 For external network access, you either need an `iptables` rule is required.
 
+### MQTT
+
+The Venus system more-or-less-requires a FlashMQ server, with a plug-in
+that transparently gateways between DBus and MQTT.
+
+The FlashMQ server runs once per user because the plug-in access the
+Session DBus. By default it binds to port `51883+$SCREEN`
+
+On The Venusian, installing this server is optional (for now).
+
+The best way to integrate this MQTT server with the rest of your
+installation is to run an independent system-level MQTT service. You need
+to teach that server to listen to port 51883.
+
+
 ### Change the VNC port
 
 If port 1 is in use:
@@ -142,6 +157,16 @@ directory to `/data`.
 
 Venus' MQTT topics are prefixed by the output of `get-unique-id`, which
 returns the system's UUID. We modify this script to include the user ID.
+
+
+### Port redirects
+
+The Venusian sets up a couple of `iptables` rules so that the user's MQTT
+clients are served by its own MQTT server, not the system's.
+
+As a side effect the user's MQTT server can't talk to the system server's
+port 1883. The workaround is to teach the latter to also listen on port
+51883.
 
 
 ## Installation
