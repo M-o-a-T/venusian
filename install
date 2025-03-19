@@ -195,9 +195,6 @@ if test ! -s "$VPW" ; then
     pwd=
 fi
 
-local UD="/etc/systemd/system/user@$NAME.service.d/"
-local EV="/etc/venusian/$NAME"
-
 mkdir -p "$R/$UD"
 mkdir -p "$R/$EV"
 
@@ -339,6 +336,9 @@ fi
 
 SCREEN=$(next_vnc $NAME)
 MNT_U=$(systemd-escape -m "$MNT")
+
+UD="/etc/systemd/system/user@$NAME.service.d/"
+EV="/etc/venusian/$NAME"
 
 if [ ! -v DEST ] ; then
     echo "A directory for/with the Venus file system is required." >&2
