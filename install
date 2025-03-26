@@ -17,6 +17,9 @@ Usage: $0
         as determined by the SCREEN=X entries in your /etc/venusian/*/vars
         files.
 
+    --fb
+        Use the system's "real" video output.
+
   System:
     --image A --dest B --root C --mount D
 
@@ -174,7 +177,7 @@ grep -qs "^$NAME:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login
 chroot "$R" /sbin/adduser $NAME systemd-journal 2>/dev/null
 chroot "$R" /sbin/adduser $NAME dialout 2>/dev/null
 chroot "$R" /sbin/adduser $NAME bluetooth 2>/dev/null
-chroot "$R" /sbin/adduser $NAME video 2>/dev/null
+test ! -v FB || chroot "$R" /sbin/adduser $NAME video 2>/dev/null
 
 SC="$LIBV/.config/systemd/user.control"
 mkdir -p "$R/$SC/default.target.wants/"
@@ -223,7 +226,7 @@ subs user
 }
 
 # command line processing
-TEMP=$(getopt -o 'fFi:d:hm:nqr:Rs:u:v?' --long 'dest:,fast,force,help,image:,mount:,no-update,replace,repo:,repo-key:,root:,skip,sub:,user:,verbose' -n "$0" -- "$@")
+TEMP=$(getopt -o 'fFi:d:hm:nqr:Rs:u:v?' --long 'dest:,fast,fb,force,help,image:,mount:,no-update,replace,repo:,repo-key:,root:,skip,sub:,user:,verbose' -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage >&2
 fi
@@ -241,7 +244,7 @@ SUB_UPD=y
 REPO=http://build.smurf.noris.de/info/smurf.list
 REPOKEY=http://build.smurf.noris.de/info/smurf.archive.gpg
 replace=
-unset NAME DEST MNT img fast
+unset NAME DEST MNT img fast FB
 
 while : ; do
     case "$1" in
@@ -256,6 +259,9 @@ while : ; do
             shift ;;
         (-F|--fast)
             fast=y
+            shift ;;
+        (--fb)
+            FB=y
             shift ;;
         (--skip)
             FORCE=""
