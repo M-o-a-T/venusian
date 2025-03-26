@@ -221,6 +221,9 @@ _END_
 if [ ! -s "$R/$EV/vars" ] || ! grep -qs "^SCREEN=" "$R/$EV/vars" ; then
     echo SCREEN=$SCREEN >>"$R/$EV/vars"
 fi
+if [ -v FB ] ; then
+    echo FB=y >>"$R/$EV/vars"
+fi
 
 subs user
 }
