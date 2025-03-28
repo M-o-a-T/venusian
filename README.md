@@ -282,6 +282,7 @@ Let's assume you have an SD card for a Raspberry Pi 4 you'd like to Venusianize.
 
 ### A typical server
 
+* Use Debian >=13.
 * `git clone https://github.com/M-o-a-T/venusian.git /opt/venusian`
 * `cd /opt/venusian`
 * `./install -i /tmp/venus.img.gz -d /opt/venus -r /
