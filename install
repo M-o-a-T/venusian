@@ -314,7 +314,7 @@ umask 022
 R="$(realpath "$root")"
 
 LIBVV=/var/lib/venusian
-USRV=/usr/lib/venusian/
+USRV=/usr/lib/venusian
 SERVICE="$USRV/service/"
 
 if [ ! -v MNT ] ; then
@@ -651,6 +651,7 @@ starters | while read f ; do
             echo >>$U ExecStart=/opt/victronenergy/dbus-mqtt/dbus_mqtt.py
             ;;
         (gui)
+            echo >>$U WorkingDirectory="/opt/victronenergy/gui"
             echo >>$U ExecStart="$USRV/bin/start-gui"
             ;;
         (*)

@@ -3,10 +3,7 @@ exec 2>&1
 
 echo "*** Starting gui ***"
 
-export QT_QPA_PLATFORM=vnc:size=480x300:addr=127.0.0.1:port=$(expr 5900 + $SCREEN)
-export QT_PLUGIN_PATH=/v/u/lib/plugins
+export QT_PLUGIN_PATH=/v/u/lib/plugins,/usr/lib/venusian/opt/gui/gfxdrivers
 
-here=$(dirname $0)
-exec ${here}/gui
-
-
+here=`pwd`
+exec ${here}/gui -display "VNC:size=1095x684:depth=32:${SCREEN}"
