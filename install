@@ -759,7 +759,7 @@ test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
 test -d "$R/usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
 test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
-for P in lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml ; do
+for P in lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml attr outcome trio ; do
     test -d "$R/usr/lib/python3/dist-packages/$P" && continue
     I="$I python3-$P"
 done
