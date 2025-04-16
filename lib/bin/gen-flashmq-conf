@@ -1,42 +1,34 @@
 #!/bin/bash
 
-cat > "/run/user/$UID/flashmq.conf <<_
+touch /run/user/$UID/flashmq.conf
+cat > /run/user/$UID/flashmq.conf <<_
 thread_count 1
 plugin /usr/libexec/flashmq/libflashmq-dbus-plugin.so
 max_packet_size 16777216
 client_max_write_buffer_size 8388608
 expire_sessions_after_seconds 86400
-include_dir /run/flashmq
+include_dir /run/user/${UID}/flashmq_include
+allow_anonymous true
 zero_byte_username_is_anonymous true
 log_level notice
 retained_messages_mode enabled_without_retaining
 
-bridge {
-    address localhost
-    port 51883
-    protocol_version mqtt5
-    publish +/$(/usr/lib/venusian/bin/get-unique-id)/#
-    subscribe +/$(/usr/lib/venusian/bin/get-unique-id)/#
-    bridge_protocol_bit false
-    tcp_nodelay true
-    clientid_prefix venus_$UID_
-}
 _
 
 if [ -v MQTT ] ; then
-cat >> "/run/user/$UID/flashmq.conf <<_
+cat >> /run/user/${UID}/flashmq.conf <<_
 listen {
   protocol mqtt
-  port $MQTT
+  port ${MQTT}
 }
 _
 fi
 
 if [ -v MQTTWS ] ; then
-cat >> "/run/user/$UID/flashmq.conf <<_
+cat >> /run/user/$UID/flashmq.conf <<_
 listen {
   protocol websockets
-  port $MQTTWS
+  port ${MQTTWS}
 }
 _
 fi

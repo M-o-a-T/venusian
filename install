@@ -187,6 +187,9 @@ DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
 _END_
 
 mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
+
+"$USRV/bin/get-unique-id"  "$R$LIBV/conf/unique-id"
+
 chroot "$R" chown -R $NAME $LIBV/{etc,conf,db,log,.config}
 
 VPW="$R$LIBV/conf/vncpassword.txt"
@@ -217,6 +220,10 @@ _END_
 
 if [ ! -s "$R/$EV/vars" ] || ! grep -qs "^SCREEN=" "$R/$EV/vars" ; then
     echo SCREEN=$SCREEN >>"$R/$EV/vars"
+fi
+
+if [ ! grep -qs "^MQTT=" "$R/$EV/vars" ; then
+    echo MQTT=$MQTT >>"$R/$EV/vars"
 fi
 
 subs user
@@ -337,6 +344,7 @@ fi
 
 SCREEN=$(next_vnc $NAME)
 MNT_U=$(systemd-escape -m "$MNT")
+MQTT=1883
 
 UD="/etc/systemd/system/user@$NAME.service.d/"
 EV="/etc/venusian/$NAME"
@@ -623,7 +631,6 @@ $Q echo Converting services
 mkdir -p "$WANTS"
 starters() {
     ls -1 "$DEST/opt/victronenergy/service/"
-    echo dbus-mqtt
 }
 starters | while read f ; do
     fx="${f##*/}"
@@ -647,9 +654,7 @@ starters | while read f ; do
         (dbus-adc) continue ;; # ?
         (dbus-ble-sensors) continue ;; # ?
         (venus-html5-logger) continue ;; # what for?
-        (dbus-mqtt)
-            echo >>$U ExecStart=/opt/victronenergy/dbus-mqtt/dbus_mqtt.py
-            ;;
+        (dbus-mqtt) continue ;; # superseded by dbus-flashmq
         (gui)
             echo >>$U ExecStart="$USRV/bin/start-gui"
             ;;
@@ -676,7 +681,6 @@ starters | while read f ; do
 
     rm $U
 done
-
 
 ################# ELF starter
 
