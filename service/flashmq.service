@@ -4,9 +4,6 @@ ConditionEnvironment=MQTT
 
 [Service]
 Type=simple
-LimitAS=infinity
-LimitRSS=infinity
-LimitCORE=infinity
 LimitNOFILE=65536
 ExecStartPre=+/bin/mkdir -p /run/user/%U/flashmq_include
 ExecStartPre=+/bin/chown venus:venus /run/user/%U/flashmq_include
