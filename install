@@ -631,6 +631,7 @@ $Q echo Converting services
 mkdir -p "$WANTS"
 starters() {
     ls -1 "$DEST/opt/victronenergy/service/"
+    echo "flashmq"
 }
 starters | while read f ; do
     fx="${f##*/}"
@@ -655,6 +656,15 @@ starters | while read f ; do
         (dbus-ble-sensors) continue ;; # ?
         (venus-html5-logger) continue ;; # what for?
         (dbus-mqtt) continue ;; # superseded by dbus-flashmq
+	(flashmq)
+            echo >>$U ExecStart=/usr/bin/flashmq
+	    echo >>$U LimitNOFILE=65536
+	    echo >>$U ExecStartPre=+/bin/mkdir -p /run/user/%U/flashmq_include
+	    echo >>$U ExecStartPre=+/bin/chown venus:venus /run/user/%U/flashmq_include
+	    echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-flashmq-conf /run/user/%U/flashmq.conf
+	    echo >>$U ExecStart=/usr/bin/flashmq --config-file /run/user/%U/flashmq.conf
+	    echo >>$U ExecReload=/bin/kill -HUP \$MAINPID
+	    ;;
         (gui)
             echo >>$U ExecStart="$USRV/bin/start-gui"
             ;;
@@ -675,6 +685,13 @@ starters | while read f ; do
         echo >>$U "[Unit]"
         echo >>$U "Requires=localsettings.service"
         echo >>$U "After=localsettings.service"
+    fi
+    if [ "$fx" == "flashmq" ] ; then
+        echo >>$U "Description=Per-User FlashMQ MQTT server"
+        echo >>$U "ConditionEnvironment=MQTT"
+        echo >>$U ""
+        echo >>$U "[Install]"
+        echo >>$U "WantedBy=multi-user.target"
     fi
     fcat "$SERVICE/$fx.service" <$U
     fln "$SERVICE/$fx.service" "$WANTS/$fx.service"
