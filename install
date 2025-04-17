@@ -188,7 +188,7 @@ _END_
 
 mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
 
-"$USRV/bin/get-unique-id"  "$R$LIBV/conf/unique-id"
+"$USRV/bin/get-unique-id" > "$R$LIBV/conf/unique-id"
 
 chroot "$R" chown -R $NAME $LIBV/{etc,conf,db,log,.config}
 
@@ -222,7 +222,7 @@ if [ ! -s "$R/$EV/vars" ] || ! grep -qs "^SCREEN=" "$R/$EV/vars" ; then
     echo SCREEN=$SCREEN >>"$R/$EV/vars"
 fi
 
-if [ ! grep -qs "^MQTT=" "$R/$EV/vars" ; then
+if  ! grep -qs "^MQTT=" "$R/$EV/vars" ; then
     echo MQTT=$MQTT >>"$R/$EV/vars"
 fi
 
