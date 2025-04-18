@@ -660,7 +660,7 @@ starters | while read f ; do
 	    echo >>$U ExecStartPre=+/bin/mkdir -p /run/user/%U/flashmq_include
 	    echo >>$U ExecStartPre=+/bin/chown venus:venus /run/user/%U/flashmq_include
 	    echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-flashmq-conf /run/user/%U/flashmq.conf
-	    echo >>$U ExecStartPre=/bin/sh -c '/usr/lib/venusian/bin/get-unique-id > /var/lib/venusian/venus/conf/unique-id'
+	    echo >>$U ExecStartPre=/bin/sh -c "'/usr/lib/venusian/bin/get-unique-id > /var/lib/venusian/venus/conf/unique-id'"
 	    echo >>$U ExecStart=/usr/bin/flashmq --config-file /run/user/%U/flashmq.conf
 	    echo >>$U ExecReload=/bin/kill -HUP \$MAINPID
 	    ;;
