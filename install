@@ -655,7 +655,6 @@ starters | while read f ; do
         (venus-html5-logger) continue ;; # what for?
         (dbus-mqtt) continue ;; # superseded by dbus-flashmq
 	(flashmq)
-            echo >>$U ExecStart=/usr/bin/flashmq
 	    echo >>$U LimitNOFILE=65536
 	    echo >>$U ExecStartPre=+/bin/mkdir -p /run/user/%U/flashmq_include
 	    echo >>$U ExecStartPre=+/bin/chown venus:venus /run/user/%U/flashmq_include
