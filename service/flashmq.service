@@ -1,11 +1,12 @@
 [Unit]
 Description=Per-User FlashMQ MQTT server
+ConditionEnvironment=MQTT
 
 [Service]
 Type=simple
-User=root
-Group=root
-LimitNOFILE=infinity
+LimitNOFILE=65536
+ExecStartPre=+/bin/mkdir -p /run/user/%U/flashmq_include
+ExecStartPre=+/bin/chown venus:venus /run/user/%U/flashmq_include
 ExecStartPre=/usr/lib/venusian/bin/gen-flashmq-conf /run/user/%U/flashmq.conf
 ExecStart=/usr/bin/flashmq --config-file /run/user/%U/flashmq.conf
 ExecReload=/bin/kill -HUP $MAINPID
@@ -16,7 +17,6 @@ EnvironmentFile=-/etc/venusian/vars
 EnvironmentFile=-/etc/venusian/%u/%N
 EnvironmentFile=-/run/user/%U/vars
 EnvironmentFile=-/run/user/%U/%N
-ConditionEnvironment=MQTT
 
 [Install]
 WantedBy=multi-user.target

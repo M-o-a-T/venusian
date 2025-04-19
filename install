@@ -190,6 +190,7 @@ DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
 _END_
 
 mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
+
 chroot "$R" chown -R $NAME $LIBV/{etc,conf,db,log,.config}
 
 VPW="$R$LIBV/conf/vncpassword.txt"
@@ -223,6 +224,10 @@ if [ ! -s "$R/$EV/vars" ] || ! grep -qs "^SCREEN=" "$R/$EV/vars" ; then
 fi
 if [ -v FB ] ; then
     echo FB=y >>"$R/$EV/vars"
+fi
+
+if  ! grep -qs "^MQTT=" "$R/$EV/vars" ; then
+    echo MQTT=$MQTT >>"$R/$EV/vars"
 fi
 
 subs user
@@ -346,6 +351,7 @@ fi
 
 SCREEN=$(next_vnc $NAME)
 MNT_U=$(systemd-escape -m "$MNT")
+MQTT=1883
 
 UD="/etc/systemd/system/user@$NAME.service.d/"
 EV="/etc/venusian/$NAME"
@@ -632,7 +638,7 @@ $Q echo Converting services
 mkdir -p "$WANTS"
 starters() {
     ls -1 "$DEST/opt/victronenergy/service/"
-    echo dbus-mqtt
+    echo "flashmq"
 }
 starters | while read f ; do
     fx="${f##*/}"
@@ -656,9 +662,16 @@ starters | while read f ; do
         (dbus-adc) continue ;; # ?
         (dbus-ble-sensors) continue ;; # ?
         (venus-html5-logger) continue ;; # what for?
-        (dbus-mqtt)
-            echo >>$U ExecStart=/opt/victronenergy/dbus-mqtt/dbus_mqtt.py
-            ;;
+        (dbus-mqtt) continue ;; # superseded by dbus-flashmq
+	(flashmq)
+	    echo >>$U LimitNOFILE=65536
+	    echo >>$U ExecStartPre=+/bin/mkdir -p /run/user/%U/flashmq_include
+	    echo >>$U ExecStartPre=+/bin/chown venus:venus /run/user/%U/flashmq_include
+	    echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-flashmq-conf /run/user/%U/flashmq.conf
+	    echo >>$U ExecStartPre=/bin/sh -c "'/usr/lib/venusian/bin/get-unique-id > /var/lib/venusian/venus/conf/unique-id'"
+	    echo >>$U ExecStart=/usr/bin/flashmq --config-file /run/user/%U/flashmq.conf
+	    echo >>$U ExecReload=/bin/kill -HUP \$MAINPID
+	    ;;
         (gui)
             echo >>$U WorkingDirectory="/opt/victronenergy/gui"
             echo >>$U ExecStart="$USRV/bin/start-gui"
@@ -681,12 +694,18 @@ starters | while read f ; do
         echo >>$U "Requires=localsettings.service"
         echo >>$U "After=localsettings.service"
     fi
+    if [ "$fx" == "flashmq" ] ; then
+        echo >>$U "Description=Per-User FlashMQ MQTT server"
+        echo >>$U "ConditionEnvironment=MQTT"
+        echo >>$U ""
+        echo >>$U "[Install]"
+        echo >>$U "WantedBy=multi-user.target"
+    fi
     fcat "$SERVICE/$fx.service" <$U
     fln "$SERVICE/$fx.service" "$WANTS/$fx.service"
 
     rm $U
 done
-
 
 ################# ELF starter
 
@@ -761,7 +780,6 @@ test -s "$R/usr/bin/pstree" || I="$I psmisc"
 test -s "$R/usr/bin/sudo" || I="$I sudo"
 test -s "$R/usr/bin/make" || I="$I make"
 test -s "$R/usr/sbin/iptables" || I="$I iptables"
-test -s "$R/usr/sbin/mosquitto" || I="$I mosquitto"
 test -s "$R/usr/bin/socat" || I="$I socat"
 test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
 test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
