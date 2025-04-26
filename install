@@ -229,10 +229,6 @@ if [ -v FB ] ; then
     echo FB=y >>"$R/$EV/vars"
 fi
 
-if  ! grep -qs "^MQTT=" "$R/$EV/vars" ; then
-    echo MQTT=$MQTT >>"$R/$EV/vars"
-fi
-
 subs user
 }
 
@@ -354,7 +350,6 @@ fi
 
 SCREEN=$(next_vnc $NAME)
 MNT_U=$(systemd-escape -m "$MNT")
-MQTT=1883
 
 UD="/etc/systemd/system/user@$NAME.service.d/"
 EV="/etc/venusian/$NAME"

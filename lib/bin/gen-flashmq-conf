@@ -2,6 +2,11 @@
 
 mkdir -p /run/user/$UID/flashmq.d
 
+if [ -v SCREEN ] ; then
+    [ -v MQTT ] || MQTT=$(( 51880 + $SCREEN ))
+    [ -v MQTTWS ] || MQTTWS=$(( 59000 + $SCREEN ))
+fi
+
 cat > /run/user/$UID/flashmq.conf <<_
 thread_count 1
 plugin /usr/libexec/flashmq/libflashmq-dbus-plugin.so
