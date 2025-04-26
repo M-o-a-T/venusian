@@ -668,10 +668,7 @@ starters | while read f ; do
         (dbus-mqtt) continue ;; # superseded by dbus-flashmq
 	(flashmq)
 	    echo >>$U LimitNOFILE=65536
-	    echo >>$U ExecStartPre=+/bin/mkdir -p /run/user/%U/flashmq_include
-	    echo >>$U ExecStartPre=+/bin/chown venus:venus /run/user/%U/flashmq_include
-	    echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-flashmq-conf /run/user/%U/flashmq.conf
-	    echo >>$U ExecStartPre=/bin/sh -c "'/usr/lib/venusian/bin/get-unique-id > /var/lib/venusian/%u/conf/unique-id'"
+	    echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-flashmq-conf
 	    echo >>$U ExecStart=/usr/bin/flashmq --config-file /run/user/%U/flashmq.conf
 	    echo >>$U ExecReload=/bin/kill -HUP \$MAINPID
 	    ;;
