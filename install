@@ -191,6 +191,9 @@ _END_
 
 mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
 
+USERID=$(grep "^$NAME:" $R/etc/passwd | ( IFS=: read a b c d ; echo $c ) )
+env USER=$NAME UID=$USERID $USRV/bin/get-unique-id > $R$LIBV/conf/unique-id
+
 chroot "$R" chown -R $NAME $LIBV/{etc,conf,db,log,.config}
 
 VPW="$R$LIBV/conf/vncpassword.txt"
@@ -668,7 +671,7 @@ starters | while read f ; do
 	    echo >>$U ExecStartPre=+/bin/mkdir -p /run/user/%U/flashmq_include
 	    echo >>$U ExecStartPre=+/bin/chown venus:venus /run/user/%U/flashmq_include
 	    echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-flashmq-conf /run/user/%U/flashmq.conf
-	    echo >>$U ExecStartPre=/bin/sh -c "'/usr/lib/venusian/bin/get-unique-id > /var/lib/venusian/venus/conf/unique-id'"
+	    echo >>$U ExecStartPre=/bin/sh -c "'/usr/lib/venusian/bin/get-unique-id > /var/lib/venusian/%u/conf/unique-id'"
 	    echo >>$U ExecStart=/usr/bin/flashmq --config-file /run/user/%U/flashmq.conf
 	    echo >>$U ExecReload=/bin/kill -HUP \$MAINPID
 	    ;;
