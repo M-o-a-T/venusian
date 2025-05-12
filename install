@@ -329,7 +329,7 @@ R="$(realpath "$root")"
 
 LIBVV=/var/lib/venusian
 USRV=/usr/lib/venusian
-SERVICE="$USRV/service/"
+SERVICE="$USRV/service"
 
 if [ ! -v MNT ] ; then
     MNT="${DEST:-/}"
