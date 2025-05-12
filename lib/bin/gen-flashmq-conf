@@ -1,18 +1,37 @@
 #!/bin/bash
 
-touch /run/user/$UID/flashmq.conf
+mkdir -p /run/user/$UID/flashmq.d
+
+if [ -v SCREEN ] ; then
+    [ -v MQTT ] || MQTT=$(( 51880 + $SCREEN ))
+    [ -v MQTTWS ] || MQTTWS=$(( 59000 + $SCREEN ))
+fi
+
 cat > /run/user/$UID/flashmq.conf <<_
 thread_count 1
+max_packet_size 10240
+client_max_write_buffer_size 102400
+
 plugin /usr/libexec/flashmq/libflashmq-dbus-plugin.so
-max_packet_size 16777216
-client_max_write_buffer_size 8388608
 expire_sessions_after_seconds 86400
-include_dir /run/user/${UID}/flashmq_include
+include_dir /run/user/${UID}/flashmq.d
 allow_anonymous true
 zero_byte_username_is_anonymous true
 log_level notice
 retained_messages_mode enabled_without_retaining
 
+bridge {
+    address ${MQTT_SERVER} 
+    port 1883
+    protocol_version mqtt5
+    publish +/$(/usr/lib/venusian/bin/get-unique-id)/#
+    subscribe +/$(/usr/lib/venusian/bin/get-unique-id)/#
+    remote_username mqtt
+    remote_password mqtt
+    bridge_protocol_bit false
+    tcp_nodelay true
+    clientid_prefix venus_${UID}_
+}
 _
 
 if [ -v MQTT ] ; then
