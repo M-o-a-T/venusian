@@ -158,21 +158,21 @@ next_vnc() {
             return 0
         fi
         test -z "$SC" || test "$SC" -le $P || P=$SC
-    done < <( find "$R/etc/venusian" -maxdepth 2 -mindepth 2 -type f -name vars )
+    done < <( find "${R}etc/venusian" -maxdepth 2 -mindepth 2 -type f -name vars )
     echo $( expr $P + 1 )
 }
 
 gen_user() {
     local NAME="$1" LIBV=$LIBVV/$NAME
 
-if grep -qs "^$NAME:" "$R/etc/passwd" ; then
+if grep -qs "^$NAME:" "${R}etc/passwd" ; then
     $Q echo Updating user $NAME
 else
     $Q echo Generating user $NAME
     chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
 fi
 
-grep -qs "^$NAME:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
+grep -qs "^$NAME:" "${R}etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
 
 chroot "$R" /sbin/adduser $NAME systemd-journal 2>/dev/null
 chroot "$R" /sbin/adduser $NAME dialout 2>/dev/null
@@ -180,11 +180,11 @@ chroot "$R" /sbin/adduser $NAME bluetooth 2>/dev/null
 test ! -v FB || chroot "$R" /sbin/adduser $NAME video 2>/dev/null
 
 SC="$LIBV/.config/systemd/user.control"
-mkdir -p "$R/$SC/default.target.wants/"
-fln "$SERVICE" "$R/$LIBV/.config/systemd/user"
-fln ".config/systemd/user.control" "$R/$LIBV/service"
+mkdir -p "${R}$SC/default.target.wants/"
+fln "$SERVICE" "${R}$LIBV/.config/systemd/user"
+fln ".config/systemd/user.control" "${R}$LIBV/service"
 
-fcat "$R/$LIBV/.config/systemd/user.conf" <<_END_
+fcat "${R}$LIBV/.config/systemd/user.conf" <<_END_
 [Manager]
 DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
 _END_
@@ -200,10 +200,10 @@ if test ! -s "$VPW" ; then
     pwd=
 fi
 
-mkdir -p "$R/$UD"
-mkdir -p "$R/$EV"
+mkdir -p "${R}$UD"
+mkdir -p "${R}$EV"
 
-fcat "$R/$UD/venusian.conf" <<_END_
+fcat "${R}$UD/venusian.conf" <<_END_
 [Unit]
 After=opt-victronenergy.mount $MNT_U
 Requires=opt-victronenergy.mount $MNT_U
@@ -219,15 +219,15 @@ ExecStartPost=+$USRV/bin/iptables_on
 ExecStopPost=+$USRV/bin/iptables_off
 _END_
 
-if [ ! -s "$R/$EV/vars" ] || ! grep -qs "^SCREEN=" "$R/$EV/vars" ; then
-    echo SCREEN=$SCREEN >>"$R/$EV/vars"
+if [ ! -s "${R}$EV/vars" ] || ! grep -qs "^SCREEN=" "${R}$EV/vars" ; then
+    echo SCREEN=$SCREEN >>"${R}$EV/vars"
 fi
 if [ -v FB ] ; then
-    echo FB=y >>"$R/$EV/vars"
+    echo FB=y >>"${R}$EV/vars"
 fi
 
-if  ! grep -qs "^MQTT=" "$R/$EV/vars" ; then
-    echo MQTT=$MQTT >>"$R/$EV/vars"
+if  ! grep -qs "^MQTT=" "${R}$EV/vars" ; then
+    echo MQTT=$MQTT >>"${R}$EV/vars"
 fi
 
 subs user
@@ -326,6 +326,12 @@ cd $temp
 umask 022
 
 R="$(realpath "$root")"
+
+# add trailing slash if user did not add it so we use ${R}usr/lib etc.
+if [ "${R: -1}" != "/" ] ; then
+	   R="$R/"
+fi
+
 
 LIBVV=/var/lib/venusian
 USRV=/usr/lib/venusian
@@ -481,24 +487,24 @@ fi
 
 DEST="$(realpath "$DEST")"
 
-mkdir -p "$R/opt/victronenergy"
-mkdir -p "$R/etc/venus"
-mkdir -p "$R/data"
-mkdir -p "$R/$USRV"/{opt,.opt}
+mkdir -p "${R}opt/victronenergy"
+mkdir -p "${R}etc/venus"
+mkdir -p "${R}data"
+mkdir -p "${R}$USRV"/{opt,.opt}
 
 subs pre
 
 # create user
 $Q echo Primary set-up
-grep -qs "^venus:" "$R/etc/group" || chroot "$R" /sbin/addgroup --system venus
-grep -qs "^venusian:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBVV" --ingroup $NAME --system --comment "Venusian System" venusian
+grep -qs "^venus:" "${R}etc/group" || chroot "$R" /sbin/addgroup --system venus
+grep -qs "^venusian:" "${R}etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBVV" --ingroup $NAME --system --comment "Venusian System" venusian
 
 # systemd
 mkdir -p "$SERVICE"
 
 # set up DBUS permissions
 for f in "$DEST/etc/dbus-1/system.d"/* ; do
-    g="$R/etc/dbus-1/system.d/${f##*/}"
+    g="${R}etc/dbus-1/system.d/${f##*/}"
     test -s "$g" || \
     sed <"$f" >"$g"  -e 's/"root"/"venus"/'
 done
@@ -508,8 +514,8 @@ cp -r "$HERE/lib/"* "$R$USRV/"
 if [ "X$REPO" != "X-" ] ; then
     $Q echo "Adding repository (some packages are not yet in Debian)"
 
-    test -s "$R/etc/apt/trusted.gpg.d/venusian.archive.gpg" || wget -q -O "$R/etc/apt/trusted.gpg.d/venusian.archive.gpg" $REPOKEY
-    test -s "$R/etc/apt/sources.list.d/venusian.list" || wget -q -O "$R/etc/apt/sources.list.d/venusian.list" $REPO
+    test -s "${R}etc/apt/trusted.gpg.d/venusian.archive.gpg" || wget -q -O "${R}etc/apt/trusted.gpg.d/venusian.archive.gpg" $REPOKEY
+    test -s "${R}etc/apt/sources.list.d/venusian.list" || wget -q -O "${R}etc/apt/sources.list.d/venusian.list" $REPO
 fi
 
 if ! test -v fast ; then
@@ -576,12 +582,12 @@ lsrc | while read f ; do
         (S20syslog) ;; # host system
         (S21avahi-daemon)
             ## host system, but ...
-            mkdir -p "$R/etc/avahi"
-            if test ! -f "$R/etc/avahi/avahi-daemon.conf" ; then
+            mkdir -p "${R}etc/avahi"
+            if test ! -f "${R}etc/avahi/avahi-daemon.conf" ; then
                 $Q echo Installing avahi-daemon
                 apti "$R" avahi-daemon
             fi
-            sed -i -e s/^use-iff-running=/use-iff-running=yes/ "$R/etc/avahi/avahi-daemon.conf"
+            sed -i -e s/^use-iff-running=/use-iff-running=yes/ "${R}etc/avahi/avahi-daemon.conf"
 
             ## TODO Garmin service file?
             ;;
@@ -623,14 +629,14 @@ done
 
 ################# Services
 
-fchg "$HERE/udev.yml" "$R/$USRV/udev.yml" || \
-    cp "$HERE/udev.yml" "$R/$USRV/udev.yml"
-test -s "$R/$LIBVV/udev.yml" ||
-    cp "$HERE/udev.example.yml" "$R/$LIBVV/udev.yml"
+fchg "$HERE/udev.yml" "${R}$USRV/udev.yml" || \
+    cp "$HERE/udev.yml" "${R}$USRV/udev.yml"
+test -s "${R}$LIBVV/udev.yml" ||
+    cp "$HERE/udev.example.yml" "${R}$LIBVV/udev.yml"
 for f in $(ls "$HERE/service/") ; do
-    fchg "$HERE/service/$f" "$R/$USRV/service/$f" || \
+    fchg "$HERE/service/$f" "${R}$USRV/service/$f" || \
     sed -e "s#@USRV@#$USRV#g" -e "s#@LIBVV@#$LIBVV#g" \
-        < "$HERE/service/$f" > "$R/$USRV/service/$f"
+        < "$HERE/service/$f" > "${R}$USRV/service/$f"
 done
 
 WANTS="$SERVICE/default.target.wants"
@@ -710,7 +716,7 @@ done
 ################# ELF starter
 
 LA="$DEST/lib/ld-2.31.so"
-LB="$R/lib/ld-linux-armhf.so.3"
+LB="${R}lib/ld-linux-armhf.so.3"
 L=
 for S in "${SUB[@]}" ; do
     test -s "$S/lib" || continue
@@ -735,32 +741,32 @@ fi
 
 ################# random directories and links
 $Q echo Checking symlinks
-fln "$MNT/lib" "$R/l"
+fln "$MNT/lib" "${R}l"
 fln "lib" "$DEST/usr/l"
-# fln "$MNT/opt/victronenergy" "$R/opt/victronenergy"
-test -e "$R/opt/victronenergy" || mkdir -p "$R/opt/victronenergy"
-fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
-fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
+# fln "$MNT/opt/victronenergy" "${R}opt/victronenergy"
+test -e "${R}opt/victronenergy" || mkdir -p "${R}opt/victronenergy"
+fln "$MNT/usr/lib/fonts" "${R}usr/lib/fonts"
+fln "$MNT/usr/lib/gconv" "${R}usr/lib/gconv"
 
 # if /o/v is a mountpoint, assume that it's our overlay,
 # thus we write to that. Otherwise we write to the overlay's
 # top directory.
-if mountpoint -q "$R/opt/victronenergy" ; then
-    if ! [ -d "$R/opt/victronenergy/gui" ] ; then
-        echo "'$R/opt/victronenergy' is mounted but empty. Unmounting." >&2
-        umount "$R/opt/victronenergy"
-        OPTVIC="$R/$USRV/opt"
+if mountpoint -q "${R}opt/victronenergy" ; then
+    if ! [ -d "${R}opt/victronenergy/gui" ] ; then
+        echo "'${R}opt/victronenergy' is mounted but empty. Unmounting." >&2
+        umount "${R}opt/victronenergy"
+        OPTVIC="${R}$USRV/opt"
     else
-        OPTVIC="$R/opt/victronenergy"
+        OPTVIC="${R}opt/victronenergy"
     fi
 else
-    OPTVIC="$R/$USRV/opt"
+    OPTVIC="${R}$USRV/opt"
 fi
 
-mkdir -p "$R/v"
-chmod 755 "$R/v"
-fln "$MNT/lib" "$R/v/l"
-fln "$MNT/usr" "$R/v/u"
+mkdir -p "${R}v"
+chmod 755 "${R}v"
+fln "$MNT/lib" "${R}v/l"
+fln "$MNT/usr" "${R}v/u"
 
 mkdir -p "$OPTVIC/gui"
 chmod 755 "$OPTVIC/gui"
@@ -771,48 +777,48 @@ case "$(chroot "$R" dpkg --print-architecture)" in
         # nothing to do
         ;;
     (*)
-        test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
-        test -s "$R/usr/share/binfmts/qemu-arm" || I="$I qemu-user-binfmt"
+        test -s "${R}usr/bin/qemu-arm" || I="$I qemu-user"
+        test -s "${R}usr/share/binfmts/qemu-arm" || I="$I qemu-user-binfmt"
         ;;
 esac
 
-test -s "$R/usr/bin/pstree" || I="$I psmisc"
-test -s "$R/usr/bin/sudo" || I="$I sudo"
-test -s "$R/usr/bin/make" || I="$I make"
-test -s "$R/usr/sbin/iptables" || I="$I iptables"
-test -s "$R/usr/bin/socat" || I="$I socat"
-test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
-test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
-test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
-test -d "$R/usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
-test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
+test -s "${R}usr/bin/pstree" || I="$I psmisc"
+test -s "${R}usr/bin/sudo" || I="$I sudo"
+test -s "${R}usr/bin/make" || I="$I make"
+test -s "${R}usr/sbin/iptables" || I="$I iptables"
+test -s "${R}usr/bin/socat" || I="$I socat"
+test -s "${R}usr/bin/bluetoothctl" || I="$I bluez"
+test -s "${R}usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
+test -d "${R}usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
+test -d "${R}usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
+test -d "${R}usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
 for P in lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml attr outcome trio ; do
-    test -d "$R/usr/lib/python3/dist-packages/$P" && continue
+    test -d "${R}usr/lib/python3/dist-packages/$P" && continue
     I="$I python3-$P"
 done
 subs pkg-r
 test -z "$I" || apti "$R" $I
 
-NTW="$R/etc/systemd/system/network-online.target.wants"
+NTW="${R}etc/systemd/system/network-online.target.wants"
 mkdir -p "$NTW"
 fln /lib/systemd/system/user@.service "$NTW/user@venus.service"
-fln /etc/systemd/system/venus.service "$R/etc/systemd/system/network-online.target.wants/venus.service"
+fln /etc/systemd/system/venus.service "${R}etc/systemd/system/network-online.target.wants/venus.service"
 
 mkdir -p "$OPTVIC/gui/qt-components/qml"
 fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$OPTVIC/gui/gfxdrivers"
 fln "$MNT/usr/lib/qml/QtQml" "$OPTVIC/gui/qt-components/qml/QtQml"
 
-fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
-fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
+fln "$USRV/bin/get-unique-id" "${R}sbin/get-unique-id"
+fln "$MNT/usr/bin/dbus" "${R}usr/bin/dbus"
 
-fln "$MNT/etc/profile.d" "$R/etc/venus/profile.d"
+fln "$MNT/etc/profile.d" "${R}etc/venus/profile.d"
 
 ################# overlay
 
 # TODO check if the target system has a kernel-side overlayfs
 
-fcat "$R/etc/systemd/system/opt-victronenergy.mount" <<_END_
+fcat "${R}etc/systemd/system/opt-victronenergy.mount" <<_END_
 [Unit]
 After=sysinit.target
 Requires=sysinit.target
@@ -873,10 +879,10 @@ done
 ################# mountpoint
 
 if [ "$MNT" != "$DEST" ] ; then
-    mkdir -p "$R/$MNT"
+    mkdir -p "${R}$MNT"
 
     if [ "$R" = "/" ] ; then
-        fcat "$R/etc/systemd/system/$MNT_U" <<_END_
+        fcat "${R}etc/systemd/system/$MNT_U" <<_END_
 [Unit]
 After=sysinit.target
 Requires=sysinit.target
@@ -887,7 +893,7 @@ What=$DEST
 Type=none
 Options=bind
 _END_
-    elif [ "$(realpath "$R/$MNT")" != "$(realpath "$DEST")" ] ; then
+    elif [ "$(realpath "${R}$MNT")" != "$(realpath "$DEST")" ] ; then
         echo "** You need to configure mounting $MNT manually **" >&2
     else
         MNT_U=
@@ -898,8 +904,8 @@ fi
 
 ################# finish
 
-find "$R/$USRV" -type d -print0|xargs -0 chmod 755
-find "$R/$USRV/"{bin,opt} -type f -print0|xargs -0 chmod 755
+find "${R}$USRV" -type d -print0|xargs -0 chmod 755
+find "${R}$USRV/"{bin,opt} -type f -print0|xargs -0 chmod 755
 
 gen_user $NAME
 
