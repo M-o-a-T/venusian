@@ -191,6 +191,9 @@ _END_
 
 mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
 
+USERID=$(grep "^$NAME:" $R/etc/passwd | ( IFS=: read a b c d ; echo $c ) )
+env USER=$NAME UID=$USERID $USRV/bin/get-unique-id > $R$LIBV/conf/unique-id
+
 chroot "$R" chown -R $NAME $LIBV/{etc,conf,db,log,.config}
 
 VPW="$R$LIBV/conf/vncpassword.txt"
@@ -215,8 +218,8 @@ BindPaths=/var/lib/venusian/%i/etc:/etc/venus
 EnvironmentFile=-/etc/venusian/vars
 EnvironmentFile=-$EV/vars
 
-ExecStartPost=+$USRV/bin/iptables_on
-ExecStopPost=+$USRV/bin/iptables_off
+ExecStartPost=+$USRV/bin/iptables-redirect on
+ExecStopPost=+$USRV/bin/iptables-redirect off
 _END_
 
 if [ ! -s "${R}$EV/vars" ] || ! grep -qs "^SCREEN=" "${R}$EV/vars" ; then
@@ -224,10 +227,6 @@ if [ ! -s "${R}$EV/vars" ] || ! grep -qs "^SCREEN=" "${R}$EV/vars" ; then
 fi
 if [ -v FB ] ; then
     echo FB=y >>"${R}$EV/vars"
-fi
-
-if  ! grep -qs "^MQTT=" "${R}$EV/vars" ; then
-    echo MQTT=$MQTT >>"${R}$EV/vars"
 fi
 
 subs user
@@ -357,7 +356,6 @@ fi
 
 SCREEN=$(next_vnc $NAME)
 MNT_U=$(systemd-escape -m "$MNT")
-MQTT=1883
 
 UD="/etc/systemd/system/user@$NAME.service.d/"
 EV="/etc/venusian/$NAME"
@@ -669,15 +667,12 @@ starters | while read f ; do
         (dbus-ble-sensors) continue ;; # ?
         (venus-html5-logger) continue ;; # what for?
         (dbus-mqtt) continue ;; # superseded by dbus-flashmq
-	(flashmq)
-	    echo >>$U LimitNOFILE=65536
-	    echo >>$U ExecStartPre=+/bin/mkdir -p /run/user/%U/flashmq_include
-	    echo >>$U ExecStartPre=+/bin/chown venus:venus /run/user/%U/flashmq_include
-	    echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-flashmq-conf /run/user/%U/flashmq.conf
-	    echo >>$U ExecStartPre=/bin/sh -c "'/usr/lib/venusian/bin/get-unique-id > /var/lib/venusian/venus/conf/unique-id'"
-	    echo >>$U ExecStart=/usr/bin/flashmq --config-file /run/user/%U/flashmq.conf
-	    echo >>$U ExecReload=/bin/kill -HUP \$MAINPID
-	    ;;
+        (flashmq)
+            echo >>$U LimitNOFILE=65536
+            echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-flashmq-conf
+            echo >>$U ExecStart=/usr/bin/flashmq --config-file /run/user/%U/flashmq.conf
+            echo >>$U ExecReload=/bin/kill -HUP \$MAINPID
+            ;;
         (gui)
             echo >>$U WorkingDirectory="/opt/victronenergy/gui"
             echo >>$U ExecStart="$USRV/bin/start-gui"
@@ -738,6 +733,14 @@ elif test ! -s "$LB" || test "$LA" -nt "$LB" ; then
     touch -r "$LA" "$LB"
     chmod 755 "$LB"
 fi
+
+################# Networking
+
+fcat "$R/etc/sysctl.d/10-venusian.conf" <<_END_
+net.ipv4.ip_forward=1
+net.ipv4.conf.all.route_localnet=1
+net.ipv4.conf.default.route_localnet=1
+_END_
 
 ################# random directories and links
 $Q echo Checking symlinks

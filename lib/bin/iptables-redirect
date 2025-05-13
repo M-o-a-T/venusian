@@ -1,0 +1,40 @@
+#!/bin/bash
+
+set -eu
+usage() (
+    echo "Usage: $0 on|off" >&2
+    exit 2
+)
+if [ $# != 1 ] ; then usage; fi
+
+if [ "$1" = "on" ] ; then
+    I=I
+elif [ "$1" = "off" ] ; then
+    I=D
+else
+    usage
+fi
+
+
+
+if [ -v SCREEN ] ; then
+    P=$(( 5900 + $SCREEN ))
+    [ -v MQTT ] || MQTT=$(( 51880 + $SCREEN ))
+    [ -v MQTTWS ] || MQTTWS=$(( 59000 + $SCREEN ))
+
+    # VNC: we want incoming packets to go to the server
+    # even though the thing only listens on localhost
+    for I in $(ls /sys/class/net) ; do
+        if [ "$I" = "lo" ] ; then continue ; fi
+        iptables -t nat -$I PREROUTING -i $I -p tcp --dport $P -j DNAT --to-destination 127.0.0.1:$P
+    done
+fi
+
+# MQTT: Venusian clients need to talk to their own server, not the system's
+if [ -v MQTT ] ; then
+    iptables -t nat -$I OUTPUT -o lo -p tcp -m owner --uid-owner $UID -m tcp --dport 1883 -j REDIRECT --to-ports $MQTT
+fi
+
+if [ -v MQTTWS ] ; then
+    iptables -t nat -$I OUTPUT -o lo -p tcp -m owner --uid-owner $UID -m tcp --dport 9001 -j REDIRECT --to-ports $MQTTWS
+fi
