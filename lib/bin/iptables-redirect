@@ -15,26 +15,28 @@ else
     usage
 fi
 
-
+echo $UID
 
 if [ -v SCREEN ] ; then
     P=$(( 5900 + $SCREEN ))
     [ -v MQTT ] || MQTT=$(( 51880 + $SCREEN ))
     [ -v MQTTWS ] || MQTTWS=$(( 59000 + $SCREEN ))
 
+echo $P
     # VNC: we want incoming packets to go to the server
     # even though the thing only listens on localhost
     for I in $(ls /sys/class/net) ; do
+echo $I
         if [ "$I" = "lo" ] ; then continue ; fi
-        iptables -t nat -$I PREROUTING -i $I -p tcp --dport $P -j DNAT --to-destination 127.0.0.1:$P
+        iptables -t nat -A PREROUTING -i $I -p tcp --dport $P -j DNAT --to-destination 127.0.0.1:$P
     done
 fi
 
 # MQTT: Venusian clients need to talk to their own server, not the system's
 if [ -v MQTT ] ; then
-    iptables -t nat -$I OUTPUT -o lo -p tcp -m owner --uid-owner $UID -m tcp --dport 1883 -j REDIRECT --to-ports $MQTT
+    iptables -t nat -A OUTPUT -o lo -p tcp -m owner --uid-owner $UID -m tcp --dport 1883 -j REDIRECT --to-ports $MQTT
 fi
 
 if [ -v MQTTWS ] ; then
-    iptables -t nat -$I OUTPUT -o lo -p tcp -m owner --uid-owner $UID -m tcp --dport 9001 -j REDIRECT --to-ports $MQTTWS
+    iptables -t nat -A OUTPUT -o lo -p tcp -m owner --uid-owner $UID -m tcp --dport 9001 -j REDIRECT --to-ports $MQTTWS
 fi
