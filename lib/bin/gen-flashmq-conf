@@ -20,18 +20,6 @@ zero_byte_username_is_anonymous true
 log_level notice
 retained_messages_mode enabled_without_retaining
 
-bridge {
-    address ${MQTT_SERVER} 
-    port 1883
-    protocol_version mqtt5
-    publish +/$(/usr/lib/venusian/bin/get-unique-id)/#
-    subscribe +/$(/usr/lib/venusian/bin/get-unique-id)/#
-    remote_username mqtt
-    remote_password mqtt
-    bridge_protocol_bit false
-    tcp_nodelay true
-    clientid_prefix venus_${UID}_
-}
 _
 
 if [ -v MQTT ] ; then
