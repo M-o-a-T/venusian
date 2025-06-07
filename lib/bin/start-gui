@@ -6,13 +6,14 @@ echo "*** Starting gui ***"
 if [ "$FB" = "y" ] ; then
 	# XXX untested and not preconfigured
 	export QT_QPA_PLATFORM=linuxfb:
-	size=720x480
-	opts="-display VNC:size=$size:depth=32:passwordFile=/data/conf/vncpassword.txt:$SCREEN"
+        export QT_PLUGIN_PATH=/v/u/lib/plugins
+	opts=-mouse
 else
-	export QT_QPA_PLATFORM=vnc:size=480x300:addr=127.0.0.1:port=$(expr 5900 + $SCREEN)
-	opts=
+	size=720x480
+	export QT_QPA_PLATFORM=vnc:size=$size:addr=127.0.0.1:port=$(expr 5900 + $SCREEN)
+        export QT_PLUGIN_PATH=/usr/lib/venusian/opt/gui/gfxdrivers
+	opts="-display VNC:size=$size:depth=32:passwordFile=/data/conf/vncpassword.txt:$SCREEN"
 fi
-export QT_PLUGIN_PATH=/v/u/lib/plugins,/usr/lib/venusian/opt/gui/gfxdrivers
 
 exec /opt/victronenergy/gui/gui $opts
 

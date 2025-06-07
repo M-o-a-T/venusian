@@ -19,7 +19,7 @@
 +    pass
  
  NAME = os.path.basename(__file__)
- VERSION = '1.62'
+ VERSION = '1.61'
  
  __all__ = ['NAME', 'VERSION']
  
