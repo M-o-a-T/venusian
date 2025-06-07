@@ -86,6 +86,39 @@ apti() {
    fi
 }
 
+packages() {
+I=""
+case "$(chroot "$R" dpkg --print-architecture)" in
+    (arm64|armhf)
+        # nothing to do
+        ;;
+    (*)
+        test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
+        test -s "$R/usr/share/binfmts/qemu-arm" || test -s "$R/usr/lib/binfmt.d/qemu-arm.conf" || I="$I qemu-user-binfmt"
+        ;;
+esac
+
+test -s "$R/usr/bin/pstree" || I="$I psmisc"
+test -s "$R/usr/bin/sudo" || I="$I sudo"
+test -s "$R/usr/bin/make" || I="$I make"
+test -s "$R/usr/sbin/iptables" || I="$I iptables"
+test -s "$R/usr/bin/socat" || I="$I socat"
+test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
+test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
+test -s "$R/usr/sbin/nginx" || I="$I nginx"
+test -s "$R/usr/share/doc/php-fpm" || I="$I php-fpm"
+test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
+test -d "$R/usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
+test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
+
+for P in lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml attr outcome trio ; do
+    test -d "$R/usr/lib/python3/dist-packages/$P" && continue
+    I="$I python3-$P"
+done
+subs pkg-r
+test -z "$I" || apti "$R" $I
+}
+
 subs() {
     W="$1"
     for S in "${SUB[@]}" ; do
@@ -530,6 +563,9 @@ lsrc() {
     ls "$DEST/etc/rcS.d"
     ls "$DEST/etc/rc5.d"
 }
+
+packages
+
 # not using the obvious (ls;ls)| pipe here because of a bash bug:
 # line numbers on errors below this point would be wrong
 lsrc | while read f ; do
@@ -775,35 +811,6 @@ fln "$MNT/usr" "$R/v/u"
 
 mkdir -p "$OPTVIC/gui"
 chmod 755 "$OPTVIC/gui"
-
-I=""
-case "$(chroot "$R" dpkg --print-architecture)" in
-    (arm64|armhf)
-        # nothing to do
-        ;;
-    (*)
-        test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
-        test -s "$R/usr/share/binfmts/qemu-arm" || I="$I qemu-user-binfmt"
-        ;;
-esac
-
-test -s "$R/usr/bin/pstree" || I="$I psmisc"
-test -s "$R/usr/bin/sudo" || I="$I sudo"
-test -s "$R/usr/bin/make" || I="$I make"
-test -s "$R/usr/sbin/iptables" || I="$I iptables"
-test -s "$R/usr/bin/socat" || I="$I socat"
-test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
-test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
-test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
-test -d "$R/usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
-test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
-
-for P in lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml attr outcome trio ; do
-    test -d "$R/usr/lib/python3/dist-packages/$P" && continue
-    I="$I python3-$P"
-done
-subs pkg-r
-test -z "$I" || apti "$R" $I
 
 NTW="$R/etc/systemd/system/network-online.target.wants"
 mkdir -p "$NTW"
