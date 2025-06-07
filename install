@@ -65,13 +65,15 @@ _END_
         READ="$HERE/install.d/$d/README"
         if test -f "$READ" ; then head -1 "$READ"; else echo "‹no README file›"; fi
     done
+
+    if [ "$(id -u)" != 0 ] ; then
+        cat <<_END_
+
+NB: This script needs to run as root.
+_END_
+    fi
     exit 1
 }
-
-if [ "$(id -u)" != 0 ] ; then
-    echo "This script needs to run as root. Sorry." >&2
-    exit 1
-fi
 
 apti() {
    R="$1"
@@ -318,6 +320,10 @@ while : ; do
     esac
 done
 
+if [ "$(id -u)" != 0 ] ; then
+    echo "This script needs to run as root. Sorry." >&2
+    exit 1
+fi
 
 temp=$(mktemp -d)
 trap 'rm -r $temp' 0 1 2 15
