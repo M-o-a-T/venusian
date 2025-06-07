@@ -915,7 +915,7 @@ done
 
 ################# mountpoint
 
-if [ "$MNT" != "$DEST" ] ; then
+if [ "$(realpath "$MNT")" != "$(realpath "$DEST")" ] ; then
     mkdir -p "$R/$MNT"
 
     if [ "$R" = "/" ] ; then
