@@ -671,6 +671,8 @@ starters | while read f ; do
             echo >>$U WorkingDirectory="/opt/victronenergy/gui"
             echo >>$U ExecStart="$USRV/bin/start-gui"
             ;;
+        (ssh-tunnel) ;; # no remote access via some tunnel
+        (vrmlogger) ;; # no external logging
         (*)
             echo >>$U ExecStart=/opt/victronenergy/service/$fx/run
             ;;
