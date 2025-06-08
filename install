@@ -571,6 +571,7 @@ if [ "X$REPO" != "X-" ] ; then
     $Q echo "Adding repository (some packages are not yet in Debian)"
 
     test -s "$R/etc/apt/trusted.gpg.d/venusian.archive.gpg" || wget -q -O "$R/etc/apt/trusted.gpg.d/venusian.archive.gpg" $REPOKEY
+    test -s "$R/etc/apt/sources.list.d/smurf.list" || \
     test -s "$R/etc/apt/sources.list.d/venusian.list" || wget -q -O "$R/etc/apt/sources.list.d/venusian.list" $REPO
 fi
 
