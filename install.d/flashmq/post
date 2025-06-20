@@ -1,1 +1,27 @@
+mkdir -p "$R/var/lib/flashmq"
+
 chroot "$R" systemctl enable flashmq
+if [ "$R" = "/" ] ; then
+    if systemctl status -- -.mount | grep -qs dev.mmcblk ; then
+        cat <<_ >/etc/systemd/system/var-lib-flashmq.mount
+[Unit]
+Description=ROM Directory for FlashMQ
+Conflicts=umount.target
+Before=flashmq.service
+
+[Mount]
+What=tmpfs
+Where=/var/lib/flashmq
+Type=tmpfs
+Options=mode=1700,strictatime,uid=0,nosuid,nodev,size=10%%,nr_inodes=100k
+_
+        mkdir -p /etc/systemd/system/flashmq.service.d
+        cat <<_ >/etc/systemd/system/flashmq.service.d/tmplib.conf
+[Unit]
+Requires=var-lib-flashmq.mount
+_
+        systemctl daemon-reload
+
+    fi
+    systemctl start flashmq
+fi
