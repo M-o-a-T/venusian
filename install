@@ -477,6 +477,7 @@ if [ -v INST ] && [ -v img ]; then
         exit 2
     fi
     btrfs subvol delete "$DEST" 2>/dev/null || rm -rf "$DEST"
+    test -d "$USRV" && rm -rf "$USRV"
 fi
 
 ################# install local requirements
@@ -747,7 +748,7 @@ starters | while read f ; do
         (netmon) continue ;; # avahi restart on network change
         (nginx)
             # TODO investigate using the global nginx server directly
-            echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-nginx-conf
+            echo >>$U ExecStartPre=$USRV/bin/gen-nginx-conf
             echo >>$U ExecStart=/usr/sbin/nginx -c /run/user/%U/nginx.conf
             echo >>$U ExecReload=/usr/sbin/nginx -c /run/user/%U/nginx.conf -s reload
             echo >>$U TimeoutStopSec=5
@@ -765,7 +766,7 @@ starters | while read f ; do
         (dbus-mqtt) continue ;; # superseded by dbus-flashmq
         (flashmq)
             echo >>$U LimitNOFILE=65536
-            echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-flashmq-conf
+            echo >>$U ExecStartPre=$USRV/bin/gen-flashmq-conf
             echo >>$U ExecStart=/usr/bin/flashmq --config-file /run/user/%U/flashmq.conf
             echo >>$U ExecReload=/bin/kill -HUP \$MAINPID
             ;;
@@ -781,7 +782,7 @@ starters | while read f ; do
                 echo Unable to determine php-fpm version >&2
                 exit 1
             fi
-            echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-phpfpm-conf
+            echo >>$U ExecStartPre=$USRV/bin/gen-phpfpm-conf
             echo >>$U ExecStart=/usr/sbin/php-fpm$V -y /run/user/%U/phpfpm.conf
             ;;
         (*)
