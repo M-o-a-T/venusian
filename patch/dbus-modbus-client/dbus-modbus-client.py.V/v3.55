@@ -1,6 +1,6 @@
 --- /opt/venus/opt/victronenergy/dbus-modbus-client/dbus-modbus-client.py	2025-02-10 22:25:03.000000000 +0100
 +++ /tmp/dbus-modbus-client.py	2025-02-24 10:58:29.332691897 +0100
-@@ -36,6 +36,17 @@
+@@ -36,14 +36,30 @@
  import victron_em
  
  import logging
@@ -19,7 +19,7 @@
 +    pass
  
  NAME = os.path.basename(__file__)
-@@ -36,7 +36,12 @@
+ VERSION = '1.62'
  
  __all__ = ['NAME', 'VERSION']
  

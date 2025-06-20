@@ -988,7 +988,11 @@ pat() { # path [sub]
         else
             ft="$temp/$(basename "$fd")"
             cp "$fs" "$ft"
-            patch $ft < $p
+            if ! patch $ft < $p ; then
+                echo "Patch '$p' (to file '$fs') did not apply." >&2
+                echo "Please create a versioned patch (see docs) and try again." >&2
+                exit 1
+            fi
             cp "$ft" "$fd"
         fi
 }
