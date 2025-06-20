@@ -825,6 +825,14 @@ done
 ################# ELF starter
 
 LA="$DEST/lib/ld-2.31.so"
+if [ ! -s "$LA" ] ; then
+    LA="$DEST/lib/ld-linux-armhf.so.3"
+fi
+if [ ! -s "$LA" ] ; then
+    echo "No ARMHF loader found ($LA). Exiting." >&2
+    exit 1
+fi
+
 LB="$R/lib/ld-linux-armhf.so.3"
 L=
 for S in "${SUB[@]}" ; do
