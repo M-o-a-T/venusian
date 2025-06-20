@@ -237,6 +237,34 @@ the base script. See the "Customization" section, below, for details.
 Prints a summary of the options given above, as well as a list of possible
 add-ons.
 
+## Plugins
+
+### FlashMQ
+
+This plugin installs a global FlashMQ process that can be used as an external gateway
+to the Venusian FlashMQ.
+
+The plugin creates a temporary file system for FlashMQ's persistent data if
+you install to a chroot *or* `/var/lib` is on an SD-card ("`/dev/mmcblk…`").
+This prevents excessive wear on the card's Flash memory. You might want to
+periodically save this directory and restore it after rebooting.
+
+### build
+
+Install the tools required to compile software and build Debian packages.
+
+Using this to build FlashMQ, instead of retrieving it externally, is TODO.
+
+### fbset
+
+Add code to configure the system's frame buffer so the Venus screen gets displayed on it.
+
+Untested and most likely to be buggy.
+
+### MoaT
+
+(TODO)
+
 ## Installation errors
 
 Note that the destination directory contains the *unmodified* Venus sources.
