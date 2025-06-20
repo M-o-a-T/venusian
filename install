@@ -714,6 +714,32 @@ _
     esac
 done
 
+################# random directories and links
+$Q echo Checking symlinks
+fln "$MNT/lib" "$R/l"
+fln "lib" "$DEST/usr/l"
+# fln "$MNT/opt/victronenergy" "$R/opt/victronenergy"
+test -e "$R/opt/victronenergy" || mkdir -p "$R/opt/victronenergy"
+fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
+fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
+
+fln "$MNT/var/www/venus" "$R/var/www/venus"
+
+# if /o/v is a mountpoint, assume that it's our overlay,
+# thus we write to that. Otherwise we write to the overlay's
+# top directory.
+if mountpoint -q "$R/opt/victronenergy" ; then
+    if ! [ -d "$R/opt/victronenergy/gui" ] ; then
+        echo "'$R/opt/victronenergy' is mounted but empty. Unmounting." >&2
+        umount "$R/opt/victronenergy"
+        OPTVIC="$R/$USRV/opt"
+    else
+        OPTVIC="$R/opt/victronenergy"
+    fi
+else
+    OPTVIC="$R/$USRV/opt"
+fi
+
 ################# Services
 
 fchg "$HERE/udev.yml" "$R/$USRV/udev.yml" || \
@@ -786,6 +812,10 @@ starters | while read f ; do
             echo >>$U ExecStart=/usr/sbin/php-fpm$V -y /run/user/%U/phpfpm.conf
             ;;
         (*)
+	        if grep -qs etc.profile.d $MNT/opt/victronenergy/service/$fx/run ; then
+                mkdir -p $OPTVIC/service/$fx
+                sed -e /etc.profile.d/d <$MNT//opt/victronenergy/service/$fx/run | fcat $OPTVIC/service/$fx/run
+            fi
             echo >>$U ExecStart=/opt/victronenergy/service/$fx/run
             ;;
     esac
@@ -896,31 +926,7 @@ server {
 _END_
 fi
 
-################# random directories and links
-$Q echo Checking symlinks
-fln "$MNT/lib" "$R/l"
-fln "lib" "$DEST/usr/l"
-# fln "$MNT/opt/victronenergy" "$R/opt/victronenergy"
-test -e "$R/opt/victronenergy" || mkdir -p "$R/opt/victronenergy"
-fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
-fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
-
-fln "$MNT/var/www/venus" "$R/var/www/venus"
-
-# if /o/v is a mountpoint, assume that it's our overlay,
-# thus we write to that. Otherwise we write to the overlay's
-# top directory.
-if mountpoint -q "$R/opt/victronenergy" ; then
-    if ! [ -d "$R/opt/victronenergy/gui" ] ; then
-        echo "'$R/opt/victronenergy' is mounted but empty. Unmounting." >&2
-        umount "$R/opt/victronenergy"
-        OPTVIC="$R/$USRV/opt"
-    else
-        OPTVIC="$R/opt/victronenergy"
-    fi
-else
-    OPTVIC="$R/$USRV/opt"
-fi
+################# more random directories and links
 
 mkdir -p "$R/v"
 chmod 755 "$R/v"
