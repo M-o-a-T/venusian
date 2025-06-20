@@ -465,7 +465,7 @@ if [ -d "$USRV" ]; then
 fi
 
 if [ -v INST ] && [ -v img ]; then
-    if [ -z "$replace" ] ; then
+    if [ -z "$replace" ] && [ -d "$DEST" ]; then
         echo "Existing image found ($DEST). Either add '--replace', or don't use '--image'." >&2
         exit 2
     fi
@@ -549,6 +549,7 @@ fi
 
 
 ################# SETUP
+
 if ! VERS=$(sed -ne 's/.* \(v[0-9]\.[0-9][0-9]*\).*/\1/p' <"$DEST/etc/issue") ; then
     echo Could not detect the Venus version in "'$DEST/etc/issue'" >&2
     exit 1
