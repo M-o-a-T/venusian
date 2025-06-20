@@ -201,6 +201,10 @@ fln() {
 
 next_vnc() {
     # well, "next" unless it's an existing user who already has a screen#
+    if [ ! -d /etc/venusian ] ; then
+        echo 1
+        return 0
+    fi
     local P=0 SC f NAME=$1
     while read f ; do
         SC="$(sed -ne 's/^SCREEN=//p' <$f)"
