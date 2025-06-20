@@ -627,6 +627,7 @@ lsrc | while read f ; do
         (S02sysfs) ;; # mounts a bunch of directories; host OS
         (S02zzz-resize-sdcard) ;; # host OS
         (S03mountall) ;; # host OS
+        (S03overlays) ;; # done later
         (S03test-data-partition) ;; # host problem
         (S04udev) ;; # host
         (S05checkroot) ;; # host
