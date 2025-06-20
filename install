@@ -235,6 +235,23 @@ mkdir -p "$R/$SC/default.target.wants/"
 fln "$SERVICE" "$R/$LIBV/.config/systemd/user"
 fln ".config/systemd/user.control" "$R/$LIBV/service"
 
+[ -v HTTP ] || HTTP=$(( 58000 + $SCREEN ))
+fcat "$R/$LIBV/nginx-fwd.conf" <<_END_
+location /$NAME/ {
+        proxy_pass http://127.0.0.1:$HTTP/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "Upgrade";
+
+        gzip on;
+        gzip_proxied any;
+        proxy_http_version 1.1;
+}
+_END_
+
 fcat "$R/$LIBV/.config/systemd/user.conf" <<_END_
 [Manager]
 DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
@@ -281,7 +298,8 @@ if [ -v FB ] ; then
 fi
 
 subs user
-}
+} # END gen_user
+
 
 # command line processing
 TEMP=$(getopt -o 'fFi:Id:hm:nqr:Rs:u:v?' --long 'dest:,fast,fb,force,help,image:,install,mount:,no-update,replace,repo:,repo-key:,root:,skip,sub:,user:,verbose' -n "$0" -- "$@")
@@ -388,9 +406,10 @@ LIBVV=/var/lib/venusian
 USRV=/usr/lib/venusian
 SERVICE="$USRV/service/"
 
-if [ -v DEST ] ; then
+if [ -v DEST ] || [ ! -v NAME ] ; then 
     INST=y
-elif [ -v INST ] ; then
+fi
+if [ ! -v DEST ] ; then
     DEST=/opt/venus
 fi
 
@@ -418,14 +437,6 @@ MNT_U=$(systemd-escape -m "$MNT")
 UD="/etc/systemd/system/user@$NAME.service.d/"
 EV="/etc/venusian/$NAME"
 
-if [ ! -v DEST ] ; then
-    echo "A directory for/with the Venus file system is required." >&2
-    echo "(Use the '--dest PATH' option.)" >&2
-    echo "" >&2
-    usage >&2
-    exit 2
-fi
-
 if test "$verb" = "y" ; then
     Q=":"
     set -x
@@ -437,10 +448,7 @@ if [ $# -gt 0 ] ; then
 fi
 
 if [ -d "$USRV" ]; then
-    if [ -z "$replace" ] ; then
-        echo "Existing installation found ($USRV). Use '--replace'." >&2
-        exit 2
-    fi
+    echo "Existing installation found ($USRV)." >&2
     echo -n "Stopping Venusian users: "
     ls /etc/venusian | while read u ; do 
         systemctl stop user@$u || true
@@ -448,10 +456,11 @@ if [ -d "$USRV" ]; then
     done
     echo "."
     umount /opt/victronenergy || true
+    umount /opt/venus || true
     rm -r "$USRV"
 fi
 
-if [ -d "$DEST" ] && [ -v img ]; then
+if [ -v INST ] && [ -v img ]; then
     if [ -z "$replace" ] ; then
         echo "Existing image found ($DEST). Either add '--replace', or don't use '--image'." >&2
         exit 2
@@ -705,6 +714,7 @@ mkdir -p "$WANTS"
 starters() {
     ls -1 "$DEST/opt/victronenergy/service/"
     echo "flashmq"
+    echo "phpfpm"
 }
 starters | while read f ; do
     fx="${f##*/}"
@@ -718,7 +728,14 @@ starters | while read f ; do
         (llmnrd) continue ;; # Not that either.
         (simple-upnpd) continue ;; # no
         (netmon) continue ;; # avahi restart on network change
-        (nginx) continue ;; # TODO teach the host OS
+        (nginx)
+            # TODO investigate using the global nginx server directly
+            echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-nginx-conf
+            echo >>$U ExecStart=/usr/sbin/nginx -c /run/user/%U/nginx.conf
+            echo >>$U ExecReload=/usr/sbin/nginx -c /run/user/%U/nginx.conf -s reload
+            echo >>$U TimeoutStopSec=5
+            echo >>$U KillMode=mixed
+            ;;
         (serial-starter) # that's the job of our udev-handler
             fln "$SERVICE/udev-handler.service" "$WANTS/udev-handler.service"
             continue ;;
@@ -741,6 +758,15 @@ starters | while read f ; do
             ;;
         (ssh-tunnel) ;; # no remote access via some tunnel
         (vrmlogger) ;; # no external logging
+        (phpfpm)
+            V=$( dpkg -s php-fpm | sed -ne s/Version:\ *//p | sed -e s/.*:// -e s/+.*// )
+            if test -z "$V" ; then
+                echo Unable to determine php-fpm version >&2
+                exit 1
+            fi
+            echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-phpfpm-conf
+            echo >>$U ExecStart=/usr/sbin/php-fpm$V -y /run/user/%U/phpfpm.conf
+            ;;
         (*)
             echo >>$U ExecStart=/opt/victronenergy/service/$fx/run
             ;;
@@ -762,6 +788,13 @@ starters | while read f ; do
     if [ "$fx" == "flashmq" ] ; then
         echo >>$U "Description=Per-User FlashMQ MQTT server"
         echo >>$U "ConditionEnvironment=MQTT"
+        echo >>$U ""
+        echo >>$U "[Install]"
+        echo >>$U "WantedBy=multi-user.target"
+    fi
+    if [ "$fx" == "nginx" ] ; then
+        echo >>$U "Description=Per-User NGINX server"
+        echo >>$U "After=phppfm"
         echo >>$U ""
         echo >>$U "[Install]"
         echo >>$U "WantedBy=multi-user.target"
@@ -806,6 +839,37 @@ net.ipv4.conf.all.route_localnet=1
 net.ipv4.conf.default.route_localnet=1
 _END_
 
+mkdir -p $R/etc/nginx/sites-available
+mkdir -p $R/var/lib/venusian/web
+
+if ! test -s "$R/etc/nginx/sites-available/venusian.conf" ; then
+fcat "$R/etc/nginx/sites-available/venusian.conf" <<_END_
+#
+# This is an example configuration for your local nginx server.
+# It is not auto-updated when you reinstall Venusian.
+
+server {
+    listen       80;
+    listen       [::]:80;
+    server_name  venusian.local;
+
+    root         /var/lib/venusian/web;
+    index        index.html ;
+    
+    location /.well-known/ {
+        proxy_pass http://localhost/.well-known/;
+        allow all;
+    }
+
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+
+    include /var/lib/venusian/*/nginx-fwd.conf;
+}
+_END_
+fi
+
 ################# random directories and links
 $Q echo Checking symlinks
 fln "$MNT/lib" "$R/l"
@@ -814,6 +878,8 @@ fln "lib" "$DEST/usr/l"
 test -e "$R/opt/victronenergy" || mkdir -p "$R/opt/victronenergy"
 fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
 fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
+
+fln "$MNT/var/www/venus" "$R/var/www/venus"
 
 # if /o/v is a mountpoint, assume that it's our overlay,
 # thus we write to that. Otherwise we write to the overlay's

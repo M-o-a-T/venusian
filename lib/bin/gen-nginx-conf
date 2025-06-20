@@ -1,0 +1,61 @@
+#!/bin/bash
+
+mkdir -p /run/user/$UID/nginx
+
+if [ -v SCREEN ] ; then
+    [ -v HTTP ] || HTTP=$(( 58000 + $SCREEN ))
+    [ -v VNC ] || VNC=$(( 5900 + $SCREEN ))
+    [ -v MQTTWS ] || MQTTWS=$(( 59000 + $SCREEN ))
+fi
+
+cat > /run/user/$UID/nginx.conf <<_
+daemon off;
+worker_processes 3;
+events {
+    worker_connections 768;
+    # multi_accept on;
+}
+http {
+    # Basic Settings
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+    # server_tokens off;
+
+    # server_names_hash_bucket_size 64;
+    # server_name_in_redirect off;
+
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    ## Logging
+    access_log syslog,severity=debug,nohostname combined;
+    error_log syslog:tag=nginx.$USER,nohostname;
+
+
+    ## Gzip settings
+    gzip  on;
+
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_buffers 16 8k;
+    gzip_http_version 1.1;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/wasm;
+
+    ## Virtual Host Configs
+    include /run/user/$UID/nginx/http.site;
+}
+_
+
+sed < /opt/venus/etc/nginx/sites-available/http.site > /run/user/$UID/nginx/http.site \
+    -e "s/listen 80 /listen $HTTP/" \
+    -e 'g/listen.*::/d' \
+    -e "s/127.0.0.1:81;/127.0.0.1:$VNC;/" \
+    -e "s/127.0.0.1:9001;/127.0.0.1:$MQTTWS;/" \
+    -e "s#unix:/var/run/#unix:/run/user/$UID/#" \
+    -e "s#include fastcgi.conf#include /opt/venus/etc/nginx/fastcgi.conf#" \
+    #
+

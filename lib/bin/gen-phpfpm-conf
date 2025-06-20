@@ -1,0 +1,24 @@
+#!/bin/bash
+
+if [ -v SCREEN ] ; then
+    [ -v MQTT ] || MQTT=$(( 51880 + $SCREEN ))
+    [ -v MQTTWS ] || MQTTWS=$(( 59000 + $SCREEN ))
+fi
+
+cat > /run/user/$UID/phpfpm.conf <<_
+[global]
+error_log = syslog
+process.max = 5
+daemonize = no
+
+[www]
+listen = /run/user/$UID/php5-fpm.socket
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 3
+pm.max_requests = 1000
+chdir = /var/www/venus
+
+_
+
