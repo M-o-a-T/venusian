@@ -1,6 +1,6 @@
 --- /opt/venus/opt/victronenergy/dbus-modbus-client/client.py	2025-02-10 22:25:03.000000000 +0100
 +++ /tmp/client.py	2025-02-24 10:40:00.815857087 +0100
-@@ -3,10 +3,16 @@
+@@ -3,10 +3,24 @@
  import threading
  import time
  
@@ -10,12 +10,20 @@
 +try:
 +    from pymodbus.utilities import computeCRC
 +except ImportError:
-+    from pymodbus.message.rtu import MessageRTU
-+    computeCRC = MessageRTU.compute_CRC
-+from pymodbus.framer.rtu_framer import ModbusRtuFramer
-+from pymodbus.framer.ascii_framer import ModbusAsciiFramer
++    try:
++        from pymodbus.framer.rtu import FramerRTU as RTU
++    except ImportError:
++        from pymodbus.message.rtu import MessageRTU as RTU
++    computeCRC = RTU.compute_CRC
++try:
++    from pymodbus.framer.rtu_framer import ModbusRtuFramer
++    from pymodbus.framer.ascii_framer import ModbusAsciiFramer
++except ImportError:
++    from pymodbus.framer.rtu import FramerRTU as ModbusRtuFramer
++    from pymodbus.framer.ascii import FramerAscii as ModbusAsciiFramer
  
 -class ModbusExtras:
++
 +class RefCount:
      def __init__(self, *args, **kwargs):
          super().__init__(*args, **kwargs)
