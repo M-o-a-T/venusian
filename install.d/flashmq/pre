@@ -1,9 +1,0 @@
-if ! grep -qs MQTT= "$R/$EV/vars" ; then
-	port=$(( 51883 + $SCREEN ))
-	echo MQTT=$port >> "$R/$EV/vars"
-fi
-
-if ! grep -qs MQTTWS= "$R/$EV/vars" ; then
-	port=$(( 59001 + $SCREEN ))
-	echo MQTTWS=$port >> "$R/$EV/vars"
-fi
