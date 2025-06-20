@@ -461,10 +461,12 @@ fi
 if [ -d "$USRV" ]; then
     echo "Existing installation found ($USRV)." >&2
     echo -n "Stopping Venusian users: "
-    ls /etc/venusian | while read u ; do 
-        systemctl stop user@$u || true
-        echo -n "$u "
-    done
+    if [ -d /etc/venusian ] ; then
+        ls /etc/venusian | while read u ; do 
+            systemctl stop user@$u || true
+            echo -n "$u "
+        done
+    fi
     echo "."
     umount /opt/victronenergy || true
     umount /opt/venus || true
