@@ -399,7 +399,14 @@ if [ "$(id -u)" != 0 ] ; then
     exit 1
 fi
 
-temp=$(mktemp -d)
+if test -v img ; then
+    TMPDIR=/var/tmp
+else
+    TMPDIR=/tmp
+fi
+export TMPDIR
+
+temp=$(mktemp -d -p $TMPDIR)
 trap 'rm -r $temp' 0 1 2 15
 cd $temp
 umask 022
