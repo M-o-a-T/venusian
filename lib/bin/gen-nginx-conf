@@ -51,7 +51,7 @@ http {
 _
 
 sed < /opt/venus/etc/nginx/sites-available/http.site > /run/user/$UID/nginx/http.site \
-    -e "s/listen 80 /listen $HTTP/" \
+    -e "s/listen 80 /listen $HTTP /" \
     -e '/listen.*::/d' \
     -e "s/127.0.0.1:81;/127.0.0.1:$VNC;/" \
     -e "s/127.0.0.1:9001;/127.0.0.1:$MQTTWS;/" \
