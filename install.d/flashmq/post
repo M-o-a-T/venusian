@@ -25,3 +25,34 @@ fi
 if [ "$R" = "/" ] ; then
     systemctl start flashmq
 fi
+
+mkdir -p /etc/flashmq/conf.d
+
+fcat /etc/flashmq/flashmq.conf <<_END_
+# https://www.flashmq.org/documentation/config-file/
+
+#log_file    /var/log/flashmq/flashmq.log
+log_level    notice
+storage_dir /var/lib/flashmq
+
+include_dir /etc/flashmq/conf.d
+
+listen {
+  protocol mqtt
+  inet_protocol ip4_ip6
+  inet4_bind_address 127.0.0.1
+  inet6_bind_address ::1
+
+  port 1883
+}
+
+listen {
+  protocol mqtt
+  inet_protocol ip4
+  inet4_bind_address 192.168.42.254
+  allow_anonymous true
+
+  port 1883
+}
+
+_END_

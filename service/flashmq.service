@@ -1,6 +1,5 @@
 [Unit]
 Description=Per-User FlashMQ MQTT server
-ConditionEnvironment=MQTT
 
 [Service]
 Type=simple

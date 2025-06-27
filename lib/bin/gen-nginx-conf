@@ -1,12 +1,8 @@
 #!/bin/bash
 
-mkdir -p /run/user/$UID/nginx
+set -ex
 
-if [ -v SCREEN ] ; then
-    [ -v HTTP ] || HTTP=$(( 58000 + $SCREEN ))
-    [ -v VNC ] || VNC=$(( 5900 + $SCREEN ))
-    [ -v MQTTWS ] || MQTTWS=$(( 59000 + $SCREEN ))
-fi
+ln -sf /var/www/venus/gui-v2.php /run/www/index.php
 
 cat > /run/user/$UID/nginx.conf <<_
 daemon off;
@@ -52,10 +48,7 @@ http {
 _
 
 sed < /opt/venus/etc/nginx/sites-available/http.site > /run/user/$UID/nginx/http.site \
-    -e "s/listen 80 /listen $HTTP /" \
     -e '/listen.*::/d' \
-    -e "s/127.0.0.1:81;/127.0.0.1:$VNC;/" \
-    -e "s/127.0.0.1:9001;/127.0.0.1:$MQTTWS;/" \
     -e "s#unix:/var/run/#unix:/run/user/$UID/#" \
     -e "s#include fastcgi.conf#include /opt/venus/etc/nginx/fastcgi.conf#" \
     #

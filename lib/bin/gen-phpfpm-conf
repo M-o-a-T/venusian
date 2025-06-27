@@ -1,10 +1,5 @@
 #!/bin/bash
 
-if [ -v SCREEN ] ; then
-    [ -v MQTT ] || MQTT=$(( 51880 + $SCREEN ))
-    [ -v MQTTWS ] || MQTTWS=$(( 59000 + $SCREEN ))
-fi
-
 cat > /run/user/$UID/phpfpm.conf <<_
 [global]
 error_log = syslog

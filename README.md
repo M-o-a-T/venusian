@@ -8,28 +8,39 @@ This includes your Intel laptop.
 
 This is of course impossible — but we're doing it anyway.
 
+**Warning**: The Venusian is not compatible with native ARMHF systems
+(Raspberry Pi < 3, or 3/4 installed with 32-bit runtime).
+
+**Warning**: After installing The Venusian, running or emulating non-Venus
+ARMHF binaries will no longer work.
+
+
 ## Rationale
 
 You might already have a Debian-based server in the same room as your Victron
 installation, and yet another computer that nibbles away at your battery
 isn't what you signed up for.
 
-You might want to run code on your Victron system that won't work with
-Python 8, or some other software that's not packaged for Victron's
-OpenEmbedded installation. (NB, Python 8 is end-of-life in mid-2024.)
+You might want to run code on your Victron system that requires Python
+> 3.12, or some other software that's not packaged for Victron's
+OpenEmbedded installation.
 
 You might need a kernel module that the Victron kernel doesn't support.
 
 You might want to re-use the backup solution you already have, instead of
 coding some custom solution for Venus.
 
-You might be interested in plugging a USB stick into your Venus
-installation for RAID-0.
+You might want to plug a USB stick into your Venus installation, for RAID.
 
 You might want to stop using the antiquated daemontools' supervisor and
-runtime system because they don't talk to dbus or anything,
-indiscriminately restart things which are broken or you don't need, and/or
-don't send their logs anywhere.
+runtime system because they don't talk to dbus,
+indiscriminately restart things which are broken or which you don't need,
+and/or don't send their logs anywhere.
+
+You might want to run more than one Venus installation on your server.
+
+You might want to use hardware that doesn't lend itself to auto-detection
+and don't want to fight the Venus system's autodiscovery.
 
 … or maybe you just don't particularly like OpenEmbedded.
 
@@ -37,32 +48,52 @@ don't send their logs anywhere.
 ## Usage
 
 * Install (see below).
-* `systemctl start user@venus`
-* The Venus GUI is available on VNC port 5901.
+* Optionally, `systemctl start venusian-net`.
+* `systemctl start venusian@venus`
 
-For external network access, you either need an `iptables` rule is required.
+### internal, bridged networking
+
+__untested__
+
+An internal bridged network is created; each Venus instance is attached to it,
+starting with the PI address 192.168.42.1. IP address configuration via Venus
+does *not* work.
+
+This mode is used when `venusian-net` has been started.
+
+You should be able to access Venus at http://your-machine/venusian/venus/
+(assuming that you're using `nginx`).
+
+
+### external, transparent networking
+
+Your Venus instances use DHCP to retrieve an available IP address and behave
+like "real" hardware.  (Static addresses are TODO.) IP address configuration via Venus
+does *not yet* work.
+
+This mode is used when `venusian-net` has *not* been started.
+
+You should be able to access Venus at http://its-ip-address/. The address is
+available via this command:
+
+    /usr/lib/venusian/bin/ven -u venus ip -j -4 addr ls dev eth0 | jq -r 'first( .[] | .addr_info | .[] | select(.scope=="global") | select(.family=="inet") | .local )'
+
+
+## Services
 
 ### MQTT
 
-The Venus system more-or-less-requires a FlashMQ server, with a plug-in
+The Venus system includes a FlashMQ server, with a plug-in
 that transparently gateways between DBus and MQTT.
 
-The FlashMQ server runs once per user because the plug-in access the
-Session DBus. By default it binds to port `51883+$SCREEN`
+This FlashMQ server runs once per user because the plug-in access the
+Session DBus.
 
-On The Venusian, installing this server is optional (for now).
+Integration of this MQTT server with the rest of your
+installation works by bridging your main MQTT server to 
+the server that's running in the Venus subsystem.
+Autoconfiguration of this is TODO.
 
-The best way to integrate this MQTT server with the rest of your
-installation is to run an independent system-level MQTT service. You need
-to teach that server to listen to port 51883.
-
-
-### Change the VNC port
-
-If port 1 is in use:
-
-* `echo SCREEN=3 >>/etc/venusian/venus/vars`
-* `systemctl restart user@venus`
 
 ## Background
 
@@ -74,9 +105,10 @@ Its programs run as the user "venus", not root.
 
 The Venus system does *not* run inside a chroot environment or a container.
 
+
 ### OpenEmbedded libraries
 
-Venus (yes, even on Raspberry Pi 4) is an `armhf` system; its binaries thus
+Venus is an `armhf` system (yes, even on Raspberry Pi 4); its binaries thus
 use `/lib/ld-linux-armhf.so.3` as their ELF loader.
 
 The Venusian assumes that its host is not an `armhf` system
@@ -109,7 +141,7 @@ The Venusian system runs as the user `venus`. It's controlled by a
 user-level systemd instance and uses that user's session dbus instead of
 the system's.
 
-Thus, a simple `systemctl restart user@venus` restarts the whole Venus
+Thus, a simple `systemctl restart venusian@venus` restarts the whole Venus
 subsystem cleanly, without requiring a possibly-risky reboot that takes an
 order of magnitude longer and is much more disruptive.
 
@@ -314,7 +346,7 @@ Let's assume you have an SD card for a Raspberry Pi 4 you'd like to Venusianize.
 * `git clone https://github.com/M-o-a-T/venusian.git /opt/venusian`
 * `cd /opt/venusian`
 * `./install -i /tmp/venus.img.gz -d /opt/venus -r /
-* systemctl start user@venus
+* systemctl start venusian@venus
 * vncclient localhost:1
 
 

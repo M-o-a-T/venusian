@@ -8,8 +8,8 @@ if [ $P -eq 0 ] ; then
     exit 1
 fi
 
-exec \
+exec sudo \
     nsenter -t $P -m -n \
-    sudo -u $U \
     env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u $U)/bus \
-    /opt/victronenergy/usr/bin/dbus "$@"
+    systemd-run --user --scope \
+    "$@"
