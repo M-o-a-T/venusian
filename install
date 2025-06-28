@@ -262,13 +262,16 @@ fcat "$R/$LIBV/.config/systemd/user.conf" <<_END_
 DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
 _END_
 
-mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
+mkdir -p "$R$LIBV/"{conf,db,log,etc,.etc,themes,var/lib}
+
+echo venusian > "$R$LIBV/etc/machine"
+echo venusian > "$R$LIBV/etc/image-type"
 
 USERID=$(grep "^$NAME:" $R/etc/passwd | ( IFS=: read a b c d ; echo $c ) )
 env USER=$NAME UID=$USERID $USRV/bin/get-unique-id > $R$LIBV/conf/unique-id
 cp $R$LIBV/conf/unique-id $R$LIBV/venus/unique-id
 
-chroot "$R" chown -R $NAME $LIBV/{etc,conf,db,log,.config}
+chroot "$R" chown -R $NAME $LIBV/{etc,.etc,conf,db,log,.config}
 
 VPW="$R$LIBV/conf/vncpassword.txt"
 if test ! -s "$VPW" ; then
@@ -397,8 +400,7 @@ User=%i
 PAMName=systemd-user
 Type=notify-reload
 PrivateMounts=yes
-ExecStartPre=+/usr/lib/venusian/bin/setup-user %i
-ExecStart=/usr/lib/systemd/systemd --user
+ExecStart=/usr/lib/venusian/bin/run-user %i
 Slice=user-%i.slice
 # Reexecute the manager on service reload, instead of reloading.
 # This provides a synchronous method for restarting all user manager
@@ -419,7 +421,7 @@ AmbientCapabilities=CAP_NET_ADMIN
 AmbientCapabilities=CAP_NET_RAW
 
 BindPaths=/var/lib/venusian/%i:/data
-BindPaths=/var/lib/venusian/%i/etc:/etc/venus
+#BindPaths=/var/lib/venusian/%i/etc:/etc/venus  # overlay, ExecStartPre
 
 EnvironmentFile=-/etc/venusian/vars
 EnvironmentFile=-$EV/vars
@@ -726,6 +728,8 @@ mkdir -p "$R/etc/venus"
 mkdir -p "$R/data"
 mkdir -p "$R/$USRV"/{opt,.opt}
 
+chgrp venus "$R/etc/venus"
+chmod 775 "$R/etc/venus"
 subs pre
 
 # create user
@@ -917,7 +921,9 @@ starters | while read f ; do
     g="$SERVICE/$fx.service"
     test -n "$FORCE" || test ! -f "$g" || continue
     U=$temp/unit
-    echo >$U "[Service]"
+    cat <<_END_ >$U
+[Service]
+_END_
 
     case "$fx" in 
         (ppp) continue ;; # Of course not.
@@ -1016,6 +1022,16 @@ _
     rm $U
 done
 
+# fcat "$SERVICE/etc-venus.mount" <<_END_
+# [Unit]
+# 
+# [Mount]
+# Where=/etc/venus
+# What=/var/lib/venusian/%u/etc
+# Type=fuse.fuse-overlayfs
+# Options=allow_other,lowerdir=/opt/venus/etc/venus,upperdir=/var/lib/venusian/%u/etc,workdir=/var/lib/venusian/%u/.etc
+# _END_
+
 ################# ELF starter
 
 LA="$DEST/lib/ld-2.31.so"
@@ -1110,8 +1126,6 @@ fln "$MNT/usr/lib/qml/QtQml" "$OPTVIC/gui/qt-components/qml/QtQml"
 
 fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
 fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
-
-fln "$MNT/etc/profile.d" "$R/etc/venus/profile.d"
 
 ################# overlay
 

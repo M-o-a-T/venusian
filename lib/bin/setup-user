@@ -1,8 +1,0 @@
-#!/bin/bash
-
-set -exu
-U=$1
-
-mkdir -p /run/www                                                                
-mount -t tmpfs tmp /run/www                                                      
-chown $U /run/www
