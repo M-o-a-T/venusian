@@ -4,3 +4,6 @@
 [submodule "ext/flashmq"]
 	path = ext/flashmq
 	url = https://github.com/M-o-a-T/flashmq.git
+[submodule "ext/dbus-serialbattery"]
+	path = ext/dbus-serialbattery
+	url = git@github.com:mr-manuel/venus-os_dbus-serialbattery.git
