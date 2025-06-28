@@ -910,7 +910,7 @@ starters | while read f ; do
             echo >>$U ExecReload=nginx -c /run/user/%U/nginx.conf -s reload
             echo >>$U TimeoutStopSec=5
             echo >>$U KillMode=mixed
-	    echo >>$U AmbientCapabilities=CAP_NET_BIND_SERVICE
+            echo >>$U AmbientCapabilities=CAP_NET_BIND_SERVICE
             ;;
         (serial-starter) # that's the job of our udev-handler
             fln "$SERVICE/udev-handler.service" "$WANTS/udev-handler.service"
@@ -947,7 +947,7 @@ starters | while read f ; do
         (*)
             mkdir -p $OPTVIC/service/$fx
             (
-			    cat <<_
+                cat <<_
 #!/bin/bash
 BASH_ARGV0="$fx"
 
