@@ -357,6 +357,27 @@ ExecStart=/usr/lib/venusian/bin/setup-netspace %i
 ExecStop=ip netns delete venusian-%i
 _END_
 
+# Step 2a: make the initial network namespace available
+fcat "$R/etc/systemd/system/venusian-initns@.service" <<_END_
+[Unit]
+Description=Init namespace for Venusian %i
+StopWhenUnneeded=true
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+EnvironmentFile=-/etc/venusian/vars
+EnvironmentFile=-$EV/vars
+
+# Ask ip netns to create a named network namespace
+# (This ensures that things like /run/netns are properly setup)
+ExecStart=/usr/lib/venusian/bin/start-net %i
+
+# Clean up
+ExecStop=/usr/lib/venusian/bin/stop-net %i
+_END_
+
 # Step 3: Run the user.
 #
 fcat "$R/etc/systemd/system/venusian@.service" <<_END_
@@ -365,8 +386,8 @@ Description=Venusian Manager for UID %i
 BindsTo=user-runtime-dir@%i.service
 After=systemd-logind.service user-runtime-dir@%i.service dbus.service systemd-oomd.service
 
-After=venusian-netns@%i.service
-Requires=venusian-netns@%i.service
+After=venusian-netns@%i.service venusian-initns@%i.service
+Requires=venusian-netns@%i.service venusian-initns@%i.service
 
 After=opt-victronenergy.mount $MNT_U
 Requires=opt-victronenergy.mount $MNT_U
@@ -394,7 +415,8 @@ MemoryPressureWatch=skip
 
 NetworkNamespacePath=/run/netns/venusian-%i
 AmbientCapabilities=CAP_NET_BIND_SERVICE
-#AmbientCapabilities=CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_RAW
 
 BindPaths=/var/lib/venusian/%i:/data
 BindPaths=/var/lib/venusian/%i/etc:/etc/venus
@@ -854,7 +876,6 @@ fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
 fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
 
 fln "$MNT/var/www/venus" "$R/var/www/venus"
-fln "$MNT/var/www/venus/index.php" "$R/data/www/venus"
 
 # if /o/v is a mountpoint, assume that it's our overlay,
 # thus we write to that. Otherwise we write to the overlay's
@@ -919,8 +940,13 @@ starters | while read f ; do
         (dbus-qwacs) continue ;; # ?
         (dbus-fronius) continue ;; # ?
         (dbus-adc) continue ;; # ?
-        (dbus-ble-sensors) continue ;; # ?
+        (dbus-ble-sensors) 
+            echo >>$U AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW
+            echo >>$U ExecStart=nsenter --net=/run/venusian/%u/initns /opt/victronenergy/dbus-ble-sensors/dbus-ble-sensors
+            ;;
         (venus-html5-logger) continue ;; # what for?
+        (venus-access) continue ;; # TODO needs replacement
+        # (venus-platform) continue ;; # TODO needs replacement
         (dbus-mqtt) continue ;; # superseded by dbus-flashmq
         (flashmq)
             echo >>$U LimitNOFILE=65536

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ $# != 1 ] ; then
+    echo "Usage: $0 NAME -- mount the initial network namespace for NAME" >&2
+    exit 1
+fi
+N=$1
+
+set -ex
+trap 'echo ERROR >&2; exit 1' ERR
+
+umount /run/venusian/$N/initns
+
+# Done
