@@ -1192,6 +1192,7 @@ for S in "${SUB[@]}" ; do
     done
 done
 
+rsync -ap --inplace ext/meter-library /opt/victronenergy/dbus-modbus-client/
 
 ################# mountpoint
 
