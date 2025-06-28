@@ -2,8 +2,7 @@
 
 set -exu
 
-test $# = 2
-N="$1"
+test $# = 0
 
 mkdir -p /run/user/$UID/flashmq.d
 
@@ -35,7 +34,8 @@ listen {
 _
 
 if nc -v -q 0 192.168.42.254 1883 </dev/null ; then
-    id=$(cat /var/lib/venusian/$N/conf/unique-id)
+    id="$(cat /data/conf/unique-id)"
+    test -n "$id"
     cat >> /run/user/$UID/flashmq.conf <<_
 bridge {
     address 192.168.42.254
