@@ -973,7 +973,6 @@ _
     fi
     if [ "$fx" == "flashmq" ] ; then
         echo >>$U "Description=Per-User FlashMQ MQTT server"
-        echo >>$U "ConditionEnvironment=MQTT"
         echo >>$U ""
         echo >>$U "[Install]"
         echo >>$U "WantedBy=multi-user.target"
