@@ -3,6 +3,7 @@
 set -ex
 
 ln -sf /var/www/venus/gui-v2.php /run/www/index.php
+mkdir -p /run/user/$UID/nginx/
 
 cat > /run/user/$UID/nginx.conf <<_
 daemon off;
