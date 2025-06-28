@@ -294,7 +294,7 @@ RemainAfterExit=yes
 EnvironmentFile=-/etc/venusian/vars
 
 ExecStart=/usr/lib/venusian/bin/setup-netif
-ExecStop=-ip link del dev venusian
+ExecStop=+-ip link del dev venusian
 ExecStop=sleep 3
 # due to Avahi nonsense
 _END_
@@ -397,7 +397,7 @@ User=%i
 PAMName=systemd-user
 Type=notify-reload
 PrivateMounts=yes
-ExecStartPre=-/usr/lib/venusian/bin/setup-user %i
+ExecStartPre=+/usr/lib/venusian/bin/setup-user %i
 ExecStart=/usr/lib/systemd/systemd --user
 Slice=user-%i.slice
 # Reexecute the manager on service reload, instead of reloading.
