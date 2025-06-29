@@ -6,7 +6,10 @@
 	url = https://github.com/M-o-a-T/flashmq.git
 [submodule "ext/dbus-serialbattery"]
 	path = ext/dbus-serialbattery
-	url = git@github.com:mr-manuel/venus-os_dbus-serialbattery.git
+	url = https://github.com/M-o-a-T/dbus-serialbattery.git
 [submodule "ext/meter_library"]
 	path = ext/meter-library
 	url = https://github.com/M-o-a-T/victron-twe-meter-library.git
+[submodule "ext/dbus-modbus-client"]
+	path = ext/dbus-modbus-client
+	url = https://github.com/M-o-a-T/dbus-modbus-client.git
