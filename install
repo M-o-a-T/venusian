@@ -30,18 +30,18 @@ This script install The Venusian onto your computer, or a file system e.g. of a 
         This option is the default if "--user" is not used.
 
     --image IMG|URL
-        Install this image to "/opt/venus".
+        Install this image to "/opt/venus" (or DEST).
 
         The image can be a URL. The special value "-web-" downloads the current image,
         "-rc-" uses the latest release candidate.
 
-        If this option is not used, "/opt/venus" must contain an unpacked
+        If this option is not used, "opt/venus" (or DEST) must contain an unpacked
         Venus root file system.
 
     --dest DIR
         Install the image to this directory.
 
-        The default is "/opt/venus". A bind-mount will be created if a
+        The default is "ROOT/opt/venus". A bind-mount will be created if a
         different destination is used.
 
     --root DIR
@@ -102,7 +102,7 @@ apti() {
 
 packages() {
 I=""
-case "$(chroot "$R" dpkg --print-architecture)" in
+case "$(chr dpkg --print-architecture)" in
     (arm64|armhf)
         # nothing to do
         ;;
@@ -224,15 +224,15 @@ if grep -qs "^$NAME:" "$R/etc/passwd" ; then
     $Q echo Updating user $NAME
 else
     $Q echo Generating user $NAME
-    chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
+    chr /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
 fi
 
-grep -qs "^$NAME:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
+grep -qs "^$NAME:" "$R/etc/passwd" || chr /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
 
-chroot "$R" /sbin/adduser $NAME systemd-journal 2>/dev/null
-chroot "$R" /sbin/adduser $NAME dialout 2>/dev/null
-chroot "$R" /sbin/adduser $NAME bluetooth 2>/dev/null
-test ! -v FB || chroot "$R" /sbin/adduser $NAME video 2>/dev/null
+chr /sbin/adduser $NAME systemd-journal 2>/dev/null
+chr /sbin/adduser $NAME dialout 2>/dev/null
+chr /sbin/adduser $NAME bluetooth 2>/dev/null
+test ! -v FB || chr /sbin/adduser $NAME video 2>/dev/null
 
 SC="$LIBV/.config/systemd/user.control"
 mkdir -p "$R/$SC/default.target.wants/"
@@ -271,7 +271,7 @@ USERID=$(grep "^$NAME:" $R/etc/passwd | ( IFS=: read a b c d ; echo $c ) )
 env USER=$NAME UID=$USERID $USRV/bin/get-unique-id > $R$LIBV/conf/unique-id
 cp $R$LIBV/conf/unique-id $R$LIBV/venus/unique-id
 
-chroot "$R" chown -R $NAME $LIBV/{etc,.etc,conf,db,log,.config}
+chr chown -R $NAME $LIBV/{apps,conf,etc,.etc,conf,db,log,.config}
 
 VPW="$R$LIBV/conf/vncpassword.txt"
 if test ! -s "$VPW" ; then
@@ -566,6 +566,7 @@ cd $temp
 umask 022
 
 R="$(realpath "$root")"
+if [ "$R" = "/" ] ; then R=""; fi
 
 LIBVV=/var/lib/venusian
 USRV=/usr/lib/venusian
@@ -575,7 +576,7 @@ if [ -v DEST ] || [ ! -v NAME ] ; then
     INST=y
 fi
 if [ ! -v DEST ] ; then
-    DEST=/opt/venus
+    DEST="$R/opt/venus"
 fi
 
 if [ ! -v MNT ] ; then
@@ -621,7 +622,7 @@ if [ -d "$USRV" ]; then
     echo "."
     systemctl stop venusian-net || true
     umount /opt/victronenergy || true
-    umount /opt/venus || true
+    umount $DEST || true
     rm -r "$USRV"
 fi
 
@@ -732,10 +733,18 @@ chgrp venus "$R/etc/venus"
 chmod 775 "$R/etc/venus"
 subs pre
 
+chr() {
+    if [ -n "$R" ] ; then
+        chroot "$R" "$@"
+    else
+        "$@"
+    fi
+}
+
 # create user
 $Q echo Primary set-up
-grep -qs "^venus:" "$R/etc/group" || chroot "$R" /sbin/addgroup --system venus
-grep -qs "^venusian:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBVV" --ingroup $NAME --system --comment "Venusian System" venusian
+grep -qs "^venus:" "$R/etc/group" || chr /sbin/addgroup --system venus
+grep -qs "^venusian:" "$R/etc/passwd" || chr /sbin/adduser --disabled-login --home "$LIBVV" --ingroup $NAME --system --comment "Venusian System" venusian
 
 # systemd
 mkdir -p "$SERVICE"
