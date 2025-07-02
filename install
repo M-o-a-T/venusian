@@ -434,6 +434,8 @@ NetworkNamespacePath=/run/netns/venusian-%i
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN
 AmbientCapabilities=CAP_NET_RAW
+AmbientCapabilities=CAP_SYS_ADMIN  # sigh
+AmbientCapabilities=CAP_CHOWN  # more sigh
 
 BindPaths=/var/lib/venusian/%i:/data
 #BindPaths=/var/lib/venusian/%i/etc:/etc/venus  # overlay, ExecStartPre
@@ -970,8 +972,8 @@ _END_
         (dbus-qwacs) continue ;; # ?
         (dbus-fronius) continue ;; # ?
         (dbus-adc) continue ;; # ?
-        (dbus-ble-sensors) 
-            echo >>$U AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW
+        (dbus-ble-sensors)
+            echo >>$U AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN
             echo >>$U ExecStart=nsenter --net=/run/venusian/%u/initns /opt/victronenergy/dbus-ble-sensors/dbus-ble-sensors
             ;;
         (venus-html5-logger) continue ;; # what for?
