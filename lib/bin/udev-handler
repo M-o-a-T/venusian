@@ -70,9 +70,10 @@ def main(config, user, verbose):
     """
     Process new Venus devices.
 
-    This program reads /run/venusian and starts the appropriate service.
+    This program reads /run/venusian/serial-add (using `socat`)
+    and starts the appropriate service.
 
-    More than one config file can be used. They are concatenated.
+    More than one config file can be given. They are concatenated.
     The first matching record is used.
 
     The configuration has the form::
@@ -94,7 +95,7 @@ def main(config, user, verbose):
 
     A non-NULL service name causes the service "NAME@DEVICE" to start.
     The unit file is located at /usr/lib/venusian/service/NAME@.service
-    (but can be overridden using /var/lib/venusian/USER/service).
+    (but can be overridden via /var/lib/venusian/USER/service/).
 
     Values from "data" are forwarded as environment variables:
     the value of "foo" is set as "VE_FOO".
@@ -118,6 +119,10 @@ class Handler:
 
     _intro_service = None
     _intro_job = None
+
+    _udev: udev.Context
+    dbus: MessageBus
+    tg: anyio.abc.TaskGroup
 
     def __init__(self, config: list[Path], user: str|None = None):
         self.cfg_files = config
@@ -205,7 +210,7 @@ class Handler:
         n_empty = 0
         fd = socket.fromfd(monitor.fileno(), socket.AF_NETLINK, socket.SOCK_STREAM)
         while True:
-            await anyio.wait_socket_readable(fd)
+            await anyio.wait_readable(fd)
             dev = monitor.poll(timeout=0)
             if dev is None:
                 if n_empty > 3:
@@ -343,7 +348,8 @@ sys_name: {dev.sys_name}  # Try to avoid this!
             raise NoSuchService(uname)
         return s,u #,p
 
-    async def start(self, name, service, dev, retry=False):
+    async def start(self, name:str, service:dict, dev, retry=False):
+        """Start the named service"""
         if name in self.known:
             logger.error("KNOWN %s %s",name, service)
             return
@@ -386,7 +392,8 @@ sys_name: {dev.sys_name}  # Try to avoid this!
             logger.error("Start %s: Job %r: %s", sname, job, sr)
 
 
-    async def stop(self, name):
+    async def stop(self, name: str):
+        """Stop the named service"""
         try:
             service = self.known.pop(name)
         except KeyError:
