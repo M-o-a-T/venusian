@@ -180,6 +180,31 @@ Our solution is different.
 * TODO: a helper to determine what the original serial prober would
   have done.
 
+In practice, this means
+
+### dbus-serialbattery
+
+The Venusian optionally installs the "dbus-serialbattery" extension.
+
+* Connect the serial line
+* `udevadm info /dev/ttyUSB9`  # or whichever
+* Add a matching entry to `/var/lib/venusian/udev.yml`, service=serialbattery
+* Configure `/var/lib/venusian/venus/etc/serialbattery.cfg` appropriately
+  (the defaults might work)
+* `udevadm trigger /dev/ttyUSB9`  # or whichever
+
+An isolated host adapter is probably a good idea.  A first approximation of whether
+your adapter is engineered well is that udev reports a serial number that's not
+all-zeroes (or 123456789).
+
+#### Bluetooth
+
+* `systemctl start venusian@venus`  # if not already running
+* `vctl enable --now serialbattery-ble@Jkbms_Ble=XX:XX:XX:XX:XX:XX`
+
+… except for the fact that Bluetooth isn't the most stable way to connect
+a battery. Seriously: use RS485 instead.
+
 
 ### Multi-site operation 
 
