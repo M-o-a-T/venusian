@@ -167,7 +167,7 @@ fcat() {
     if [ $# -gt 0 ] && [ -f "$DST" ] ; then
         S1=$(sha256sum < "$DST" | sed -e 's/ .*//')
     fi
-    
+
     cat >"$DST"
     if [ $# -gt 0 ] && [ $S1 != $(sha256sum < "$DST" | sed -e 's/ .*//') ] ; then
         "$@"
@@ -535,7 +535,7 @@ while : ; do
             REPOKEY="$2"
             shift 2 ;;
         (-s|--sub)
-            if test -d "$HERE/install.d/$2" ; then 
+            if test -d "$HERE/install.d/$2" ; then
                 SUB+=("$2")
             else
                 echo "Unknown argument ('$2'). Exiting." >&2
@@ -573,7 +573,7 @@ LIBVV=/var/lib/venusian
 USRV=/usr/lib/venusian
 SERVICE="$USRV/service/"
 
-if [ -v DEST ] || [ ! -v NAME ] ; then 
+if [ -v DEST ] || [ ! -v NAME ] ; then
     INST=y
 fi
 if [ ! -v DEST ] ; then
@@ -616,7 +616,7 @@ fi
 if [ -d "$USRV" ]; then
     echo "Existing installation found ($USRV)." >&2
     echo -n "Stopping Venusian users: "
-    ls /etc/venusian | while read u ; do 
+    ls /etc/venusian | while read u ; do
         systemctl stop user@$u || true
         echo -n "$u "
     done
@@ -935,7 +935,7 @@ starters | while read f ; do
 [Service]
 _END_
 
-    case "$fx" in 
+    case "$fx" in
         (ppp) continue ;; # Of course not.
         (llmnrd) continue ;; # Not that either.
         (simple-upnpd) continue ;; # no
@@ -1034,7 +1034,7 @@ done
 
 # fcat "$SERVICE/etc-venus.mount" <<_END_
 # [Unit]
-# 
+#
 # [Mount]
 # Where=/etc/venus
 # What=/var/lib/venusian/%u/etc
@@ -1100,7 +1100,7 @@ server {
 
     root         /var/lib/venusian/web;
     index        index.html ;
-    
+
     location /.well-known/ {
         proxy_pass http://localhost/.well-known/;
         allow all;
