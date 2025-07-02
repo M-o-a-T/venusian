@@ -1007,7 +1007,7 @@ _END_
             echo >>$U ExecStart=php-fpm$V -y /run/user/%U/phpfpm.conf
             ;;
         (*)
-            mkdir -p $OPTVIC/service/$fx
+            mkdir -p "$OPTVIC/service/$fx"
             (
                 cat <<_
 #!/bin/bash
@@ -1015,7 +1015,7 @@ BASH_ARGV0="$fx"
 
 _
                 sed -e '/^#!.bin.sh/d' -e /etc.profile.d/d -e '/^exec 2>&1$/d' <$MNT//opt/victronenergy/service/$fx/run
-            ) | fcat $OPTVIC/service/$fx/run
+            ) | fcat "$OPTVIC/service/$fx/run"
             echo >>$U ExecStart=/opt/victronenergy/service/$fx/run "%N"
             ;;
     esac
