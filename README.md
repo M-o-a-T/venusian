@@ -48,8 +48,9 @@ and don't want to fight the Venus system's autodiscovery.
 ## Usage
 
 * Install (see below).
-* Optionally, `systemctl start venusian-net`.
+* Optionally, `systemctl enable --now venusian-net`.
 * `systemctl start venusian@venus`
+
 
 ### internal, bridged networking
 
@@ -394,8 +395,8 @@ if you want to override it. Note that the latter file includes the user ID.
 
 ### ven
 
-`ven XXX` runs `XXX` as the user "venus". You can use "-u NAME" to switch to
-a different user.
+`ven XXX` runs program `XXX` as the user "venus". You can use "-u NAME"
+to switch to a different user.
 
 This helper is required because a mere `sudo -u venus` doesn't connect you to
 the user's DBus.
