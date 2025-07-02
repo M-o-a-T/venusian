@@ -35,3 +35,14 @@ ExecStart=/opt/victronenergy/dbus-serialbattery/start_ble.sh %i
 Requires=localsettings.service
 After=localsettings.service
 _END_
+
+S="$HERE/ext/dbus-serialbattery/dbus-serialbattery/qml/gui-v2/3.6x"
+D="$OPTVIC/gui/qml/"
+
+if grep -qs 'PageBattery {}' "$OPTVIC/gui/qml/PageMain.qml" ; then
+    sed -i -e s/PageBattery/PageBatterySerial/ "$OPTVIC/gui/qml/PageMain.qml"
+fi
+
+rsync -rEt --inplace "$S"/PageBatteryDbusSerialbattery* "$D"
+rsync -Et --inplace "$S"/PageBattery.qml "$D"/PageBatterySerial.qml
+
