@@ -1222,7 +1222,21 @@ for S in "${SUB[@]}" ; do
     done
 done
 
-rsync -ap --inplace ext/meter-library /opt/victronenergy/dbus-modbus-client/
+cd
+mkdir -p "$OPTVIC/dbus-modbus-client"
+for f in $(ls "$HERE/ext/dbus-modbus-client") ; do
+    if ! cmp --silent "$HERE/ext/dbus-modbus-client/$f" "$OPTVIC/dbus-modbus-client/$f" ; then
+        cp -a "$HERE/ext/dbus-modbus-client/$f" "$OPTVIC/dbus-modbus-client/$f"
+    fi
+done
+if ! rsync -rEt --delete --inplace --cvs-exclude --exclude=meter-library "$HERE/ext/dbus-modbus-client" "$OPTVIC/" ; then
+    echo "Sync from 'ext/dbus-modbus-client' to '$OPTVIC/' failed. Exiting." >&2
+    exit 1
+fi
+if ! rsync -rEt --delete --inplace --cvs-exclude "$HERE/ext/meter-library" "$OPTVIC/dbus-modbus-client/" ; then
+    echo "Sync from 'ext/meter-library' to '$OPTVIC/dbus-modbus-client/' failed. Exiting." >&2
+    exit 1
+fi
 
 ################# mountpoint
 
