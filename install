@@ -263,7 +263,7 @@ fcat "$R/$LIBV/.config/systemd/user.conf" <<_END_
 DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
 _END_
 
-mkdir -p "$R$LIBV/"{conf,db,log,etc,.etc,themes,var/lib}
+mkdir -p "$R$LIBV/"{apps,conf,db,log,etc,.etc,themes,var/lib}
 
 echo venusian > "$R$LIBV/etc/machine"
 echo venusian > "$R$LIBV/etc/image-type"
