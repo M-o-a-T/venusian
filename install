@@ -298,9 +298,10 @@ RemainAfterExit=yes
 EnvironmentFile=-/etc/venusian/vars
 
 ExecStart=/usr/lib/venusian/bin/setup-netif
-ExecStop=+-ip link del dev venusian
-ExecStop=sleep 3
-# due to Avahi nonsense
+ExecStop=true
+# we don't actually take the interface down
+# (a) Avahi gets confused when we reload
+# (b) we attach the system's FlashMQ to the interface's IP address
 _END_
 
 # Step 1a: tell systemd-networkd to ignore new bridged nodes
@@ -310,19 +311,32 @@ fcat "$R/etc/systemd/network/00-venusian-any.network" <<_END_
 Name=venusian-*
 
 [Network]
+Description=An individual Venusian network link
 Unmanaged=yes
 RequiredForOnline=no
 _END_
 
-# Step 1b: tell systemd-networkd to handle the bridge
+# Step 1bc: tell systemd-networkd to handle the bridge
 #
+fcat "$R/etc/systemd/network/00-venusian-br.netdev" <<_END_
+[NetDev]
+Name=venusian
+Kind=bridge
+
+[Bridge]
+STP=no
+_END_
+
 fcat "$R/etc/systemd/network/00-venusian.network" <<_END_
 [Match]
 Name=venusian
 
 [Network]
 Description=Venusian network bridge
+#Unmanaged=yes
+ConfigureWithoutCarrier=yes
 RequiredForOnline=no
+
 DHCPServer=no
 
 LinkLocalAddressing=no
