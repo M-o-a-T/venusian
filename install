@@ -1059,7 +1059,7 @@ done
 # Where=/etc/venus
 # What=/var/lib/venusian/%u/etc
 # Type=fuse.fuse-overlayfs
-# Options=allow_other,lowerdir=/opt/venus/etc/venus,upperdir=/var/lib/venusian/%u/etc,workdir=/var/lib/venusian/%u/.etc
+# Options=allow_other,lowerdir=$DEST/etc/venus,upperdir=/var/lib/venusian/%u/etc,workdir=/var/lib/venusian/%u/.etc
 # _END_
 
 ################# ELF starter
