@@ -720,7 +720,10 @@ trap 'losetup -d $ld; rm -r $temp' 0 1 2 15
 mount ${ld}p2 $temp/dir
 trap 'umount $temp/dir; losetup -d $ld; rm -r $temp' 0 1 2 15
 
-rsync -a --numeric-ids --perms --inplace "$temp/dir/." "$DEST/."
+if ! rsync -aX --numeric-ids --delete --inplace "$temp/dir/." "$DEST/." ; then
+    echo "Sync from '$temp/dir/.' to '$DEST/.' failed. Exiting." >&2
+    exit 1
+fi
 echo "Copy/sync finished."
 
 umount $temp/dir; losetup -d $ld
