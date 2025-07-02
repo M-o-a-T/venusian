@@ -124,6 +124,7 @@ test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
 test -s "$R/usr/sbin/nginx" || I="$I nginx"
 test -s "$R/usr/share/doc/php-fpm" || I="$I php-fpm"
 test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
+test -d "$R/usr/lib/python3/dist-packages/dbus_fast" || I="$I python3-dbus-fast"
 test -d "$R/usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
 test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
