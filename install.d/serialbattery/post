@@ -1,0 +1,37 @@
+rsync -ap --inplace "$HERE/ext/dbus-serialbattery/dbus-serialbattery" "$OPTVIC/"
+
+fcat "$SERVICE/serialbattery@.service" <<_END_
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+EnvironmentFile=-/etc/venusian/vars
+EnvironmentFile=-/etc/venusian/%u/vars
+EnvironmentFile=-/etc/venusian/%u/%N
+EnvironmentFile=-/run/user/%U/vars
+EnvironmentFile=-/run/user/%U/%N
+
+ExecStart=/opt/victronenergy/dbus-serialbattery/dbus-serialbattery.py %i
+[Unit]
+Requires=localsettings.service
+After=localsettings.service
+_END_
+
+fcat "$SERVICE/serialbattery-ble@.service" <<_END_
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+EnvironmentFile=-/etc/venusian/vars
+EnvironmentFile=-/etc/venusian/%u/vars
+EnvironmentFile=-/etc/venusian/%u/%P
+EnvironmentFile=-/etc/venusian/%u/%N
+EnvironmentFile=-/run/user/%U/vars
+EnvironmentFile=-/run/user/%U/%P
+EnvironmentFile=-/run/user/%U/%N
+
+ExecStart=/opt/victronenergy/dbus-serialbattery/start_ble.sh %i
+[Unit]
+Requires=localsettings.service
+After=localsettings.service
+_END_
