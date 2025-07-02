@@ -770,12 +770,12 @@ grep -qs "^venusian:" "$R/etc/passwd" || chr /sbin/adduser --disabled-login --ho
 # systemd
 mkdir -p "$SERVICE"
 
-# set up DBUS permissions
-for f in "$DEST/etc/dbus-1/system.d"/* ; do
-    g="$R/etc/dbus-1/system.d/${f##*/}"
-    test -s "$g" || \
-    sed <"$f" >"$g"  -e 's/"root"/"venus"/'
-done
+## set up DBUS permissions
+#for f in "$DEST/etc/dbus-1/system.d"/* ; do
+#    g="$R/etc/dbus-1/system.d/${f##*/}"
+#    test -s "$g" || \
+#    sed <"$f" >"$g"  -e 's/"root"/"venus"/'
+#done
 
 cp -r "$HERE/lib/"* "$R$USRV/"
 
