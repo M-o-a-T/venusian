@@ -1,0 +1,62 @@
+#!/bin/bash
+
+if [ $# != 1 ] ; then
+    echo "Usage: $0 NAME -- create a Venusian network interface for NAME" >&2
+    exit 1
+fi
+N=$1
+NS=venusian-$N
+
+set -ex
+trap 'echo ERROR >&2; exit 1' ERR
+
+# Check whether the link is down
+NC="$(ip -j link|jq -r 'first( .[] | select(.ifname=="venusian") | .flags | .[] | select(.=="NO-CARRIER"))')"
+
+# Create a namespace
+
+ip link delete $NS 2>/dev/null || true
+ip netns delete $NS 2>/dev/null || true
+
+ip netns add $NS
+ip netns exec $NS ip link set lo up
+# umount /run/netns/$NS
+# mount --bind /proc/self/ns/net /run/netns/$NS
+
+# Use the Venusian bridge for local networking.
+ip link add name venusian-$N type veth peer eth0 netns $NS
+sleep 2  # don't we all hate race conditions
+ip link set venusian-$N master venusian
+ip netns exec $NS ip addr add 192.168.42.$SCREEN/24 dev eth0
+ip netns exec $NS ip link set eth0 up
+#brctl show
+
+if [ -v EXT ] ; then
+    # Also use public networking.
+
+    gw=$(ip -j -4 route | jq -r 'first( .[] | select(.dst=="default") | .dev )')
+    MAIN=$(ip -j -4 addr ls dev $gw | jq -r 'first( .[] | .addr_info | .[] | select(.scope=="global") | select(.family=="inet") | .local )')
+
+    ip link add eth1 link $gw netns $NS type macvlan mode bridge
+    ip netns exec $NS ip link set eth1 up
+    if [ "$EXT" = "dyn" ] ; then
+        ip netns exec $NS dhclient -v -4 --no-pid -lf /var/lib/venusian/$N/dhcp eth1
+    else
+        ip netns exec $NS ip addr add $EXT dev eth1
+        RT=$(ip -j -4 route | jq -r 'first( .[] | select(.dst=="default") | .gateway )')
+        ip netns exec $NS ip route add default via $RT dev eth1
+    fi
+    if test -n "$NC" ; then
+        # The interface came up
+        systemctl reload flashmq || true
+    fi
+	
+
+else
+    # Default route via the bridge
+    ip netns exec $NS ip route add default via 192.168.42.254 dev eth0
+    
+fi
+
+# Done
+echo "Network interface for $N created."

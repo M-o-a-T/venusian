@@ -17,10 +17,8 @@ This script install The Venusian onto your computer, or a file system e.g. of a 
         If you use this option without "--install",
         a new user for your existing Venus installation will be created.
 
-    --vnc N
-        Use port 5900+N for VNC. The default is 1, or the next free port
-        as determined by the SCREEN=X entries in your /etc/venusian/*/vars
-        files.
+    --ext ADDR
+        Use this IP adress for the container. "dyn" uses DHCP.
 
     --fb
         Use the system's "real" video output.
@@ -32,18 +30,18 @@ This script install The Venusian onto your computer, or a file system e.g. of a 
         This option is the default if "--user" is not used.
 
     --image IMG|URL
-        Install this image to "/opt/venus".
+        Install this image to "/opt/venus" (or DEST).
 
         The image can be a URL. The special value "-web-" downloads the current image,
         "-rc-" uses the latest release candidate.
 
-        If this option is not used, "/opt/venus" must contain an unpacked
+        If this option is not used, "opt/venus" (or DEST) must contain an unpacked
         Venus root file system.
 
     --dest DIR
         Install the image to this directory.
 
-        The default is "/opt/venus". A bind-mount will be created if a
+        The default is "ROOT/opt/venus". A bind-mount will be created if a
         different destination is used.
 
     --root DIR
@@ -104,7 +102,7 @@ apti() {
 
 packages() {
 I=""
-case "$(chroot "$R" dpkg --print-architecture)" in
+case "$(chr dpkg --print-architecture)" in
     (arm64|armhf)
         # nothing to do
         ;;
@@ -118,12 +116,15 @@ test -s "$R/usr/bin/pstree" || I="$I psmisc"
 test -s "$R/usr/bin/sudo" || I="$I sudo"
 test -s "$R/usr/bin/make" || I="$I make"
 test -s "$R/usr/sbin/iptables" || I="$I iptables"
+test -s "$R/usr/bin/jq" || I="$I jq"
+test -s "$R/usr/bin/nc.openbsd" || I="$I netcat-openbsd"
 test -s "$R/usr/bin/socat" || I="$I socat"
 test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
 test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
 test -s "$R/usr/sbin/nginx" || I="$I nginx"
 test -s "$R/usr/share/doc/php-fpm" || I="$I php-fpm"
 test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
+test -d "$R/usr/lib/python3/dist-packages/dbus_fast" || I="$I python3-dbus-fast"
 test -d "$R/usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
 test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
@@ -166,7 +167,7 @@ fcat() {
     if [ $# -gt 0 ] && [ -f "$DST" ] ; then
         S1=$(sha256sum < "$DST" | sed -e 's/ .*//')
     fi
-    
+
     cat >"$DST"
     if [ $# -gt 0 ] && [ $S1 != $(sha256sum < "$DST" | sed -e 's/ .*//') ] ; then
         "$@"
@@ -199,7 +200,7 @@ fln() {
 }
 
 
-next_vnc() {
+next_screen() {
     # well, "next" unless it's an existing user who already has a screen#
     if [ ! -d /etc/venusian ] ; then
         echo 1
@@ -224,25 +225,26 @@ if grep -qs "^$NAME:" "$R/etc/passwd" ; then
     $Q echo Updating user $NAME
 else
     $Q echo Generating user $NAME
-    chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
+    chr /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
 fi
 
-grep -qs "^$NAME:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
+grep -qs "^$NAME:" "$R/etc/passwd" || chr /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
 
-chroot "$R" /sbin/adduser $NAME systemd-journal 2>/dev/null
-chroot "$R" /sbin/adduser $NAME dialout 2>/dev/null
-chroot "$R" /sbin/adduser $NAME bluetooth 2>/dev/null
-test ! -v FB || chroot "$R" /sbin/adduser $NAME video 2>/dev/null
+chr /sbin/adduser $NAME systemd-journal 2>/dev/null
+chr /sbin/adduser $NAME dialout 2>/dev/null
+chr /sbin/adduser $NAME bluetooth 2>/dev/null
+test ! -v FB || chr /sbin/adduser $NAME video 2>/dev/null
 
 SC="$LIBV/.config/systemd/user.control"
 mkdir -p "$R/$SC/default.target.wants/"
 fln "$SERVICE" "$R/$LIBV/.config/systemd/user"
 fln ".config/systemd/user.control" "$R/$LIBV/service"
 
-[ -v HTTP ] || HTTP=$(( 58000 + $SCREEN ))
 fcat "$R/$LIBV/nginx-fwd.conf" <<_END_
+# XXX TODO this is broken when using native networking
+#
 location /$NAME/ {
-        proxy_pass http://127.0.0.1:$HTTP/;
+        proxy_pass http://192.168.42.$SCREEN:80/;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -261,12 +263,16 @@ fcat "$R/$LIBV/.config/systemd/user.conf" <<_END_
 DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
 _END_
 
-mkdir -p "$R$LIBV/"{conf,db,log,etc,themes,var/lib}
+mkdir -p "$R$LIBV/"{apps,conf,db,log,etc,.etc,themes,var/lib}
+
+echo venusian > "$R$LIBV/etc/machine"
+echo venusian > "$R$LIBV/etc/image-type"
 
 USERID=$(grep "^$NAME:" $R/etc/passwd | ( IFS=: read a b c d ; echo $c ) )
 env USER=$NAME UID=$USERID $USRV/bin/get-unique-id > $R$LIBV/conf/unique-id
+cp $R$LIBV/conf/unique-id $R$LIBV/venus/unique-id
 
-chroot "$R" chown -R $NAME $LIBV/{etc,conf,db,log,.config}
+chr chown -R $NAME $LIBV/{apps,conf,etc,.etc,conf,db,log,.config}
 
 VPW="$R$LIBV/conf/vncpassword.txt"
 if test ! -s "$VPW" ; then
@@ -275,23 +281,183 @@ if test ! -s "$VPW" ; then
     pwd=
 fi
 
-mkdir -p "$R/$UD"
 mkdir -p "$R/$EV"
 
-fcat "$R/$UD/venusian.conf" <<_END_
+## Networking.
+
+# Step 1: a bridged network interface for Venusian.
+
+fcat "$R/etc/systemd/system/venusian-net.service" <<_END_
 [Unit]
-After=opt-victronenergy.mount $MNT_U
-Requires=opt-victronenergy.mount $MNT_U
+Description=Optional bridge interface for Venusian
 
 [Service]
-BindPaths=/var/lib/venusian/%i:/data
-BindPaths=/var/lib/venusian/%i/etc:/etc/venus
+Type=oneshot
+RemainAfterExit=yes
+
+EnvironmentFile=-/etc/venusian/vars
+
+ExecStart=/usr/lib/venusian/bin/setup-netif
+ExecStop=true
+# we don't actually take the interface down
+# (a) Avahi gets confused when we reload
+# (b) we attach the system's FlashMQ to the interface's IP address
+_END_
+
+# Step 1a: tell systemd-networkd to ignore new bridged nodes
+#
+fcat "$R/etc/systemd/network/00-venusian-any.network" <<_END_
+[Match]
+Name=venusian-*
+
+[Network]
+Description=An individual Venusian network link
+Unmanaged=yes
+RequiredForOnline=no
+_END_
+
+# Step 1bc: tell systemd-networkd to handle the bridge
+#
+fcat "$R/etc/systemd/network/00-venusian-br.netdev" <<_END_
+[NetDev]
+Name=venusian
+Kind=bridge
+
+[Bridge]
+STP=no
+_END_
+
+fcat "$R/etc/systemd/network/00-venusian.network" <<_END_
+[Match]
+Name=venusian
+
+[Network]
+Description=Venusian network bridge
+#Unmanaged=yes
+ConfigureWithoutCarrier=yes
+RequiredForOnline=no
+
+DHCPServer=no
+
+LinkLocalAddressing=no
+LLMNR=no
+LLDP=no
+EmitLLDP=no
+
+Address=192.168.42.254/24
+
+#[DHCPServer]
+#PoolOffset=130
+#PoolSize=120
+_END_
+
+# Step 2: create a per-user network namespace
+fcat "$R/etc/systemd/system/venusian-netns@.service" <<_END_
+[Unit]
+Description=Network namespace for Venusian %i
+StopWhenUnneeded=true
+Requires=venusian-net.service
+After=venusian-net.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+#PrivateNetwork=yes
 
 EnvironmentFile=-/etc/venusian/vars
 EnvironmentFile=-$EV/vars
 
-ExecStartPost=+$USRV/bin/iptables-redirect on
-ExecStopPost=+$USRV/bin/iptables-redirect off
+# Ask ip netns to create a named network namespace
+# (This ensures that things like /run/netns are properly setup)
+ExecStart=/usr/lib/venusian/bin/setup-netspace %i
+
+# Clean up
+ExecStop=ip netns delete venusian-%i
+_END_
+
+# Step 2a: make the initial network namespace available
+fcat "$R/etc/systemd/system/venusian-initns@.service" <<_END_
+[Unit]
+Description=Init namespace for Venusian %i
+StopWhenUnneeded=true
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+EnvironmentFile=-/etc/venusian/vars
+EnvironmentFile=-$EV/vars
+
+# Ask ip netns to create a named network namespace
+# (This ensures that things like /run/netns are properly setup)
+ExecStart=/usr/lib/venusian/bin/start-net %i
+
+# Clean up
+ExecStop=/usr/lib/venusian/bin/stop-net %i
+_END_
+
+# Step 3: Run the user.
+#
+fcat "$R/etc/systemd/system/venusian@.service" <<_END_
+[Unit]
+Description=Venusian Manager for UID %i
+BindsTo=user-runtime-dir@%i.service
+After=systemd-logind.service user-runtime-dir@%i.service dbus.service systemd-oomd.service
+
+After=venusian-netns@%i.service venusian-initns@%i.service
+Requires=venusian-netns@%i.service venusian-initns@%i.service
+
+After=opt-victronenergy.mount $MNT_U
+Requires=opt-victronenergy.mount $MNT_U
+
+[Service]
+User=%i
+PAMName=systemd-user
+Type=notify-reload
+PrivateMounts=yes
+ExecStart=/usr/lib/venusian/bin/run-user %i
+Slice=user-%i.slice
+# Reexecute the manager on service reload, instead of reloading.
+# This provides a synchronous method for restarting all user manager
+# instances after upgrade.
+ReloadSignal=RTMIN+25
+KillMode=mixed
+Delegate=pids memory cpu
+DelegateSubgroup=init.scope
+TasksMax=infinity
+TimeoutStopSec=120s
+KeyringMode=inherit
+OOMScoreAdjust=100
+MemoryPressureWatch=skip
+
+NetworkNamespacePath=/run/netns/venusian-%i
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_RAW
+AmbientCapabilities=CAP_SYS_ADMIN  # sigh
+AmbientCapabilities=CAP_CHOWN  # more sigh
+
+BindPaths=/var/lib/venusian/%i:/data
+#BindPaths=/var/lib/venusian/%i/etc:/etc/venus  # overlay, ExecStartPre
+TemporaryFileSystem=/run/www
+
+EnvironmentFile=-/etc/venusian/vars
+EnvironmentFile=-$EV/vars
+#Environment=XDG_RUNTIME_DIR=/run/venusian/%i
+
+ExecStartPre=+mkdir -p /run/venusian/%i
+ExecStartPre=+chown %i /run/venusian/%i
+#ExecStartPost=+$USRV/bin/iptables-redirect on
+#ExecStopPost=+$USRV/bin/iptables-redirect off
+_END_
+
+# Venus service (shortcut)
+fcat "$R/etc/systemd/system/venus.target" <<_END_
+[Unit]
+Requires=venusian@venus.service
+
+[Install]
+RequiredBy=multi-user.target
 _END_
 
 if [ ! -s "$R/$EV/vars" ] || ! grep -qs "^SCREEN=" "$R/$EV/vars" ; then
@@ -300,13 +466,16 @@ fi
 if [ -v FB ] ; then
     echo FB=y >>"$R/$EV/vars"
 fi
+if [ -v EXT ] ; then
+    echo "EXT='$ext'" >>"$R/$EV/vars"
+fi
 
 subs user
 } # END gen_user
 
 
 # command line processing
-TEMP=$(getopt -o 'fFi:Id:hm:nqr:Rs:u:v?' --long 'dest:,fast,fb,force,help,image:,install,mount:,no-update,replace,repo:,repo-key:,root:,skip,sub:,user:,verbose' -n "$0" -- "$@")
+TEMP=$(getopt -o 'fFi:Id:hm:nqr:Rs:u:v?' --long 'dest:,ext:,fast,fb,force,help,image:,install,mount:,no-update,replace,repo:,repo-key:,root:,skip,sub:,user:,verbose' -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage >&2
 fi
@@ -324,7 +493,7 @@ SUB_UPD=y
 REPO=http://build.smurf.noris.de/info/smurf.list
 REPOKEY=http://build.smurf.noris.de/info/smurf.archive.gpg
 replace=
-unset NAME DEST MNT img fast FB INST
+unset NAME DEST MNT img fast FB INST EXT
 
 while : ; do
     case "$1" in
@@ -334,6 +503,9 @@ while : ; do
         (-q|--quiet)
             Q=":"
             shift ;;
+        (--ext)
+            EXT="$2"
+            shift 2;;
         (-f|--force)
             FORCE=y
             shift ;;
@@ -380,7 +552,7 @@ while : ; do
             REPOKEY="$2"
             shift 2 ;;
         (-s|--sub)
-            if test -d "$HERE/install.d/$2" ; then 
+            if test -d "$HERE/install.d/$2" ; then
                 SUB+=("$2")
             else
                 echo "Unknown argument ('$2'). Exiting." >&2
@@ -412,16 +584,17 @@ cd $temp
 umask 022
 
 R="$(realpath "$root")"
+if [ "$R" = "/" ] ; then R=""; fi
 
 LIBVV=/var/lib/venusian
 USRV=/usr/lib/venusian
 SERVICE="$USRV/service/"
 
-if [ -v DEST ] || [ ! -v NAME ] ; then 
+if [ -v DEST ] || [ ! -v NAME ] ; then
     INST=y
 fi
 if [ ! -v DEST ] ; then
-    DEST=/opt/venus
+    DEST="$R/opt/venus"
 fi
 
 if [ ! -v MNT ] ; then
@@ -442,10 +615,9 @@ else
     NAME=venus
 fi
 
-SCREEN=$(next_vnc $NAME)
+SCREEN=$(next_screen $NAME)
 MNT_U=$(systemd-escape -m "$MNT")
 
-UD="/etc/systemd/system/user@$NAME.service.d/"
 EV="/etc/venusian/$NAME"
 
 if test "$verb" = "y" ; then
@@ -468,8 +640,9 @@ if [ -d "$USRV" ]; then
         done
     fi
     echo "."
+    systemctl stop venusian-net || true
     umount /opt/victronenergy || true
-    umount /opt/venus || true
+    umount $DEST || true
     rm -r "$USRV"
 fi
 
@@ -479,6 +652,7 @@ if [ -v INST ] && [ -v img ]; then
         exit 2
     fi
     btrfs subvol delete "$DEST" 2>/dev/null || rm -rf "$DEST"
+    test -d "$USRV" && rm -rf "$USRV"
 fi
 
 ################# install local requirements
@@ -548,7 +722,10 @@ trap 'losetup -d $ld; rm -r $temp' 0 1 2 15
 mount ${ld}p2 $temp/dir
 trap 'umount $temp/dir; losetup -d $ld; rm -r $temp' 0 1 2 15
 
-rsync -a --numeric-ids --perms --inplace "$temp/dir/." "$DEST/."
+if ! rsync -aX --numeric-ids --delete --inplace "$temp/dir/." "$DEST/." ; then
+    echo "Sync from '$temp/dir/.' to '$DEST/.' failed. Exiting." >&2
+    exit 1
+fi
 echo "Copy/sync finished."
 
 umount $temp/dir; losetup -d $ld
@@ -575,22 +752,32 @@ mkdir -p "$R/etc/venus"
 mkdir -p "$R/data"
 mkdir -p "$R/$USRV"/{opt,.opt}
 
+chgrp venus "$R/etc/venus"
+chmod 775 "$R/etc/venus"
 subs pre
+
+chr() {
+    if [ -n "$R" ] ; then
+        chroot "$R" "$@"
+    else
+        "$@"
+    fi
+}
 
 # create user
 $Q echo Primary set-up
-grep -qs "^venus:" "$R/etc/group" || chroot "$R" /sbin/addgroup --system venus
-grep -qs "^venusian:" "$R/etc/passwd" || chroot "$R" /sbin/adduser --disabled-login --home "$LIBVV" --ingroup $NAME --system --comment "Venusian System" venusian
+grep -qs "^venus:" "$R/etc/group" || chr /sbin/addgroup --system venus
+grep -qs "^venusian:" "$R/etc/passwd" || chr /sbin/adduser --disabled-login --home "$LIBVV" --ingroup $NAME --system --comment "Venusian System" venusian
 
 # systemd
 mkdir -p "$SERVICE"
 
-# set up DBUS permissions
-for f in "$DEST/etc/dbus-1/system.d"/* ; do
-    g="$R/etc/dbus-1/system.d/${f##*/}"
-    test -s "$g" || \
-    sed <"$f" >"$g"  -e 's/"root"/"venus"/'
-done
+## set up DBUS permissions
+#for f in "$DEST/etc/dbus-1/system.d"/* ; do
+#    g="$R/etc/dbus-1/system.d/${f##*/}"
+#    test -s "$g" || \
+#    sed <"$f" >"$g"  -e 's/"root"/"venus"/'
+#done
 
 cp -r "$HERE/lib/"* "$R$USRV/"
 
@@ -629,6 +816,7 @@ lsrc | while read f ; do
         (S02sysfs) ;; # mounts a bunch of directories; host OS
         (S02zzz-resize-sdcard) ;; # host OS
         (S03mountall) ;; # host OS
+        (S03overlays) ;; # done later
         (S03test-data-partition) ;; # host problem
         (S04udev) ;; # host
         (S05checkroot) ;; # host
@@ -714,6 +902,32 @@ _
     esac
 done
 
+################# random directories and links
+$Q echo Checking symlinks
+fln "$MNT/lib" "$R/l"
+fln "lib" "$DEST/usr/l"
+# fln "$MNT/opt/victronenergy" "$R/opt/victronenergy"
+test -e "$R/opt/victronenergy" || mkdir -p "$R/opt/victronenergy"
+fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
+fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
+
+fln "$MNT/var/www/venus" "$R/var/www/venus"
+
+# if /o/v is a mountpoint, assume that it's our overlay,
+# thus we write to that. Otherwise we write to the overlay's
+# top directory.
+if mountpoint -q "$R/opt/victronenergy" ; then
+    if ! [ -d "$R/opt/victronenergy/gui" ] ; then
+        echo "'$R/opt/victronenergy' is mounted but empty. Unmounting." >&2
+        umount "$R/opt/victronenergy"
+        OPTVIC="$R/$USRV/opt"
+    else
+        OPTVIC="$R/opt/victronenergy"
+    fi
+else
+    OPTVIC="$R/$USRV/opt"
+fi
+
 ################# Services
 
 fchg "$HERE/udev.yml" "$R/$USRV/udev.yml" || \
@@ -739,20 +953,23 @@ starters | while read f ; do
     g="$SERVICE/$fx.service"
     test -n "$FORCE" || test ! -f "$g" || continue
     U=$temp/unit
-    echo >$U "[Service]"
+    cat <<_END_ >$U
+[Service]
+_END_
 
-    case "$fx" in 
+    case "$fx" in
         (ppp) continue ;; # Of course not.
         (llmnrd) continue ;; # Not that either.
         (simple-upnpd) continue ;; # no
         (netmon) continue ;; # avahi restart on network change
         (nginx)
             # TODO investigate using the global nginx server directly
-            echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-nginx-conf
-            echo >>$U ExecStart=/usr/sbin/nginx -c /run/user/%U/nginx.conf
-            echo >>$U ExecReload=/usr/sbin/nginx -c /run/user/%U/nginx.conf -s reload
+            echo >>$U ExecStartPre=$USRV/bin/gen-nginx-conf
+            echo >>$U ExecStart=nginx -c /run/user/%U/nginx.conf
+            echo >>$U ExecReload=nginx -c /run/user/%U/nginx.conf -s reload
             echo >>$U TimeoutStopSec=5
             echo >>$U KillMode=mixed
+            echo >>$U AmbientCapabilities=CAP_NET_BIND_SERVICE
             ;;
         (serial-starter) # that's the job of our udev-handler
             fln "$SERVICE/udev-handler.service" "$WANTS/udev-handler.service"
@@ -761,18 +978,24 @@ starters | while read f ; do
         (dbus-qwacs) continue ;; # ?
         (dbus-fronius) continue ;; # ?
         (dbus-adc) continue ;; # ?
-        (dbus-ble-sensors) continue ;; # ?
+        (dbus-ble-sensors)
+            echo >>$U AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN
+            echo >>$U ExecStart=nsenter --net=/run/venusian/%u/initns /opt/victronenergy/dbus-ble-sensors/dbus-ble-sensors
+            ;;
         (venus-html5-logger) continue ;; # what for?
+        (venus-access) continue ;; # TODO needs replacement
+        # (venus-platform) continue ;; # TODO needs replacement
         (dbus-mqtt) continue ;; # superseded by dbus-flashmq
         (flashmq)
             echo >>$U LimitNOFILE=65536
-            echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-flashmq-conf
+            echo >>$U ExecStartPre=$USRV/bin/gen-flashmq-conf
             echo >>$U ExecStart=/usr/bin/flashmq --config-file /run/user/%U/flashmq.conf
             echo >>$U ExecReload=/bin/kill -HUP \$MAINPID
             ;;
         (gui)
             echo >>$U WorkingDirectory="/opt/victronenergy/gui"
             echo >>$U ExecStart="$USRV/bin/start-gui"
+            echo >>$U AmbientCapabilities=CAP_NET_BIND_SERVICE
             ;;
         (ssh-tunnel) ;; # no remote access via some tunnel
         (vrmlogger) ;; # no external logging
@@ -782,11 +1005,20 @@ starters | while read f ; do
                 echo Unable to determine php-fpm version >&2
                 exit 1
             fi
-            echo >>$U ExecStartPre=/usr/lib/venusian/bin/gen-phpfpm-conf
-            echo >>$U ExecStart=/usr/sbin/php-fpm$V -y /run/user/%U/phpfpm.conf
+            echo >>$U ExecStartPre=$USRV/bin/gen-phpfpm-conf
+            echo >>$U ExecStart=php-fpm$V -y /run/user/%U/phpfpm.conf
             ;;
         (*)
-            echo >>$U ExecStart=/opt/victronenergy/service/$fx/run
+            mkdir -p "$OPTVIC/service/$fx"
+            (
+                cat <<_
+#!/bin/bash
+BASH_ARGV0="$fx"
+
+_
+                sed -e '/^#!.bin.sh/d' -e /etc.profile.d/d -e '/^exec 2>&1$/d' <$MNT//opt/victronenergy/service/$fx/run
+            ) | fcat "$OPTVIC/service/$fx/run"
+            echo >>$U ExecStart=/opt/victronenergy/service/$fx/run "%N"
             ;;
     esac
     echo >>$U "Type=simple"
@@ -805,7 +1037,6 @@ starters | while read f ; do
     fi
     if [ "$fx" == "flashmq" ] ; then
         echo >>$U "Description=Per-User FlashMQ MQTT server"
-        echo >>$U "ConditionEnvironment=MQTT"
         echo >>$U ""
         echo >>$U "[Install]"
         echo >>$U "WantedBy=multi-user.target"
@@ -823,9 +1054,27 @@ starters | while read f ; do
     rm $U
 done
 
+# fcat "$SERVICE/etc-venus.mount" <<_END_
+# [Unit]
+#
+# [Mount]
+# Where=/etc/venus
+# What=/var/lib/venusian/%u/etc
+# Type=fuse.fuse-overlayfs
+# Options=allow_other,lowerdir=$DEST/etc/venus,upperdir=/var/lib/venusian/%u/etc,workdir=/var/lib/venusian/%u/.etc
+# _END_
+
 ################# ELF starter
 
 LA="$DEST/lib/ld-2.31.so"
+if [ ! -s "$LA" ] ; then
+    LA="$DEST/lib/ld-linux-armhf.so.3"
+fi
+if [ ! -s "$LA" ] ; then
+    echo "No ARMHF loader found ($LA). Exiting." >&2
+    exit 1
+fi
+
 LB="$R/lib/ld-linux-armhf.so.3"
 L=
 for S in "${SUB[@]}" ; do
@@ -873,7 +1122,7 @@ server {
 
     root         /var/lib/venusian/web;
     index        index.html ;
-    
+
     location /.well-known/ {
         proxy_pass http://localhost/.well-known/;
         allow all;
@@ -888,31 +1137,7 @@ server {
 _END_
 fi
 
-################# random directories and links
-$Q echo Checking symlinks
-fln "$MNT/lib" "$R/l"
-fln "lib" "$DEST/usr/l"
-# fln "$MNT/opt/victronenergy" "$R/opt/victronenergy"
-test -e "$R/opt/victronenergy" || mkdir -p "$R/opt/victronenergy"
-fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
-fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
-
-fln "$MNT/var/www/venus" "$R/var/www/venus"
-
-# if /o/v is a mountpoint, assume that it's our overlay,
-# thus we write to that. Otherwise we write to the overlay's
-# top directory.
-if mountpoint -q "$R/opt/victronenergy" ; then
-    if ! [ -d "$R/opt/victronenergy/gui" ] ; then
-        echo "'$R/opt/victronenergy' is mounted but empty. Unmounting." >&2
-        umount "$R/opt/victronenergy"
-        OPTVIC="$R/$USRV/opt"
-    else
-        OPTVIC="$R/opt/victronenergy"
-    fi
-else
-    OPTVIC="$R/$USRV/opt"
-fi
+################# more random directories and links
 
 mkdir -p "$R/v"
 chmod 755 "$R/v"
@@ -933,8 +1158,6 @@ fln "$MNT/usr/lib/qml/QtQml" "$OPTVIC/gui/qt-components/qml/QtQml"
 
 fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
 fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
-
-fln "$MNT/etc/profile.d" "$R/etc/venus/profile.d"
 
 ################# overlay
 
@@ -981,7 +1204,11 @@ pat() { # path [sub]
         else
             ft="$temp/$(basename "$fd")"
             cp "$fs" "$ft"
-            patch $ft < $p
+            if ! patch $ft < $p ; then
+                echo "Patch '$p' (to file '$fs') did not apply." >&2
+                echo "Please create a versioned patch (see docs) and try again." >&2
+                exit 1
+            fi
             cp "$ft" "$fd"
         fi
 }
@@ -997,6 +1224,21 @@ for S in "${SUB[@]}" ; do
     done
 done
 
+cd
+mkdir -p "$OPTVIC/dbus-modbus-client"
+for f in $(ls "$HERE/ext/dbus-modbus-client") ; do
+    if ! cmp --silent "$HERE/ext/dbus-modbus-client/$f" "$OPTVIC/dbus-modbus-client/$f" ; then
+        cp -a "$HERE/ext/dbus-modbus-client/$f" "$OPTVIC/dbus-modbus-client/$f"
+    fi
+done
+if ! rsync -rEt --delete --inplace --cvs-exclude --exclude=meter-library "$HERE/ext/dbus-modbus-client" "$OPTVIC/" ; then
+    echo "Sync from 'ext/dbus-modbus-client' to '$OPTVIC/' failed. Exiting." >&2
+    exit 1
+fi
+if ! rsync -rEt --delete --inplace --cvs-exclude "$HERE/ext/meter-library" "$OPTVIC/dbus-modbus-client/" ; then
+    echo "Sync from 'ext/meter-library' to '$OPTVIC/dbus-modbus-client/' failed. Exiting." >&2
+    exit 1
+fi
 
 ################# mountpoint
 
@@ -1033,6 +1275,6 @@ gen_user $NAME
 
 subs post
 
-test "$R" = "/" && systemctl daemon-reload
+test "$R" = "/" && systemctl daemon-reload && systemctl reload systemd-networkd
 
 $Q echo "Done."

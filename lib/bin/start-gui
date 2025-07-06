@@ -1,18 +1,19 @@
-#!/bin/sh
-exec 2>&1
+#!/bin/bash
 
 echo "*** Starting gui ***"
 
 if [ "$FB" = "y" ] ; then
-	# XXX untested and not preconfigured
-	export QT_QPA_PLATFORM=linuxfb:
-	size=720x480
-	opts="-display VNC:size=$size:depth=32:passwordFile=/data/conf/vncpassword.txt:$SCREEN"
+	export QT_QPA_PLATFORM=linuxfb
 else
-	export QT_QPA_PLATFORM=vnc:size=480x300:addr=127.0.0.1:port=$(expr 5900 + $SCREEN)
-	opts=
+	export QT_QPA_PLATFORM="offscreen:configfile=/opt/victronenergy/gui/offscreen.conf"
+#	export QT_QPA_PLATFORM=vnc:size=480x300:addr=127.0.0.1:port=$(expr 5900 + $SCREEN)
 fi
-export QT_PLUGIN_PATH=/v/u/lib/plugins,/usr/lib/venusian/opt/gui/gfxdrivers
+export QT_PLUGIN_PATH=/v/u/lib/plugins:/usr/lib/venusian/opt/gui/gfxdrivers
 
-exec /opt/victronenergy/gui/gui $opts
+[ -v VNC ] || VNC=$(( 5900 + $SCREEN ))
+
+echo $$
+sleep 30
+
+exec /opt/victronenergy/gui/gui -neatvnc 127.0.0.1 -neatvncport $VNC
 

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -exu
+U=$1
+ID=$(id -u $U)
+
+fuse-overlayfs /etc/venus -o lowerdir=/opt/venus/etc/venus -o upperdir=/var/lib/venusian/venus/etc -o workdir=/var/lib/venusian/venus/.etc
+
+mkdir -p /run/user/$ID/systemd
+chown -R $ID /run/www  # SIGH
+
+exec /usr/lib/systemd/systemd --user

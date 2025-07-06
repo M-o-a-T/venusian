@@ -1,11 +1,13 @@
 #!/bin/bash
 
+set -exu
+
+test $# = 0
+
 mkdir -p /run/user/$UID/flashmq.d
 
-if [ -v SCREEN ] ; then
-    [ -v MQTT ] || MQTT=$(( 51880 + $SCREEN ))
-    [ -v MQTTWS ] || MQTTWS=$(( 59000 + $SCREEN ))
-fi
+MQTT=1883
+MQTTWS=9001
 
 cat > /run/user/$UID/flashmq.conf <<_
 thread_count 1
@@ -18,25 +20,28 @@ include_dir /run/user/${UID}/flashmq.d
 allow_anonymous true
 zero_byte_username_is_anonymous true
 log_level notice
-retained_messages_mode enabled_without_retaining
+retained_messages_mode enabled
 
-_
-
-if [ -v MQTT ] ; then
-cat >> /run/user/${UID}/flashmq.conf <<_
 listen {
   protocol mqtt
-  port ${MQTT}
+  port 1883
 }
-_
-fi
 
-if [ -v MQTTWS ] ; then
-cat >> /run/user/$UID/flashmq.conf <<_
 listen {
   protocol websockets
-  port ${MQTTWS}
+  port 9001
+}
+_
+
+if nc -v -q 0 192.168.42.254 1883 </dev/null ; then
+    id="$(cat /data/conf/unique-id)"
+    test -n "$id"
+    cat >> /run/user/$UID/flashmq.conf <<_
+bridge {
+    address 192.168.42.254
+    publish W/$id/# 1
+    publish N/$id/# 1
+    subscribe R/$id/# 1
 }
 _
 fi
-
