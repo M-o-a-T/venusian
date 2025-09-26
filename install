@@ -102,6 +102,7 @@ apti() {
 
 packages() {
 I=""
+PI=""
 case "$(chr dpkg --print-architecture)" in
     (arm64|armhf)
         # nothing to do
@@ -130,10 +131,16 @@ test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-seria
 
 for P in lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml attr outcome trio ; do
     test -d "$R/usr/lib/python3/dist-packages/$P" && continue
-    I="$I python3-$P"
+    if apt-cache show "python3-$P" >/dev/null 2>&1; then
+        I="$I python3-$P"
+    else
+        PI="$PI $P"
+    fi
 done
+test -z "$PI" || { test -s "$R/usr/bin/pip3" || I="$I python3-pip" }
 subs pkg-r
 test -z "$I" || apti "$R" $I
+test -z "$PI" || pip3 install --no-cache-dir --break-system-packages $PI
 }
 
 subs() {
