@@ -1177,7 +1177,7 @@ Requires=sysinit.target
 Where=/opt/victronenergy
 What=$USRV/opt
 Type=fuse.fuse-overlayfs
-Options=allow_other,lowerdir=$MNT/opt/victronenergy,upperdir=$USRV/opt,workdir=$USRV/.opt
+Options=allow_other,lowerdir=${MNT%/}/opt/victronenergy,upperdir=$USRV/opt,workdir=$USRV/.opt
 _END_
 
 ################# patches
