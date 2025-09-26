@@ -591,7 +591,6 @@ cd $temp
 umask 022
 
 R="$(realpath "$root")"
-if [ "$R" = "/" ] ; then R=""; fi
 
 LIBVV=/var/lib/venusian
 USRV=/usr/lib/venusian
