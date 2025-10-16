@@ -1091,10 +1091,11 @@ done
 if test -n "$L" ; then
     $Q echo Skip patching ld-linux-armhf
 elif test ! -s "$LB" || test "$LA" -nt "$LB" ; then
-    # need to hack
+    # HACK: Patch armhf loader to find venus libraries.
+    # For binary alignment, ensure paths remain of same length!
     $Q echo Patching ld-linux-armhf
     sed -e 's#/lib/#/v/l/#' -e 's#/usr/lib/#/v/u/lib/#' < "$LA" > "$LB.n"
-    if test $(stat --format %s "$LA") -ne $(stat --format %s "$LA") ; then
+    if test $(stat --format %s "$LA") -ne $(stat --format %s "$LB.n") ; then
         echo Patching $LA to $LB did not work
         exit 1
     fi
