@@ -103,13 +103,21 @@ apti() {
 packages() {
 I=""
 PI=""
-case "$(chr dpkg --print-architecture)" in
-    (arm64|armhf)
+DEBARCH="$(chr dpkg --print-architecture)"
+case "$DEBARCH" in
+    (armhf)
         # nothing to do
         ;;
     (*)
-        test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
-        test -s "$R/usr/share/binfmts/qemu-arm" || test -s "$R/usr/lib/binfmt.d/qemu-arm.conf" || I="$I qemu-user-binfmt"
+        PAGESIZE=$(getconf PAGE_SIZE)
+        if [ "$DEBARCH" = "arm64" ] && [ "$PAGESIZE" -eq 4096 ]; then
+            # 64-bit arm host with 4 KB pages → native armhf should work
+            # if CONFIG_COMPAT=y is set in the kernel
+            :
+        else
+            test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
+            test -s "$R/usr/share/binfmts/qemu-arm" || test -s "$R/usr/lib/binfmt.d/qemu-arm.conf" || I="$I qemu-user-binfmt"
+        fi
         ;;
 esac
 
