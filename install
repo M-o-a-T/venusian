@@ -1056,7 +1056,7 @@ _
     fi
     if [ "$fx" == "nginx" ] ; then
         echo >>$U "Description=Per-User NGINX server"
-        echo >>$U "After=phpfpm"
+        echo >>$U "After=phpfpm.service"
         echo >>$U ""
         echo >>$U "[Install]"
         echo >>$U "WantedBy=multi-user.target"
