@@ -1,5 +1,7 @@
 #!/bin/bash
 
+SOCKET=/run/user/$UID/php5-fpm.socket
+rm -f $SOCKET
 cat > /run/user/$UID/phpfpm.conf <<_
 [global]
 error_log = syslog
@@ -7,7 +9,7 @@ process.max = 5
 daemonize = no
 
 [www]
-listen = /run/user/$UID/php5-fpm.socket
+listen = $SOCKET
 pm = dynamic
 pm.max_children = 5
 pm.start_servers = 2
