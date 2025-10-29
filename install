@@ -779,8 +779,8 @@ $Q echo Primary set-up
 grep -qs "^venus:" "$R/etc/group" || chr /sbin/addgroup --system venus
 grep -qs "^venusian:" "$R/etc/passwd" || chr /sbin/adduser --disabled-login --home "$LIBVV" --ingroup $NAME --system --comment "Venusian System" venusian
 
-chgrp venus "$R/etc/venus"
-chmod 775 "$R/etc/venus"
+chr chgrp venus "$R/etc/venus"
+chr chmod 775 "$R/etc/venus"
 subs pre
 # systemd
 mkdir -p "$SERVICE"
