@@ -615,6 +615,10 @@ if [ ! -v MNT ] ; then
     MNT="${DEST:-/}"
 fi
 
+# drop trailing slashes from $MNT.
+shopt -s extglob
+MNT="${MNT%%+(/)}"
+
 if [ -v NAME ] ; then
     if [ ! -v DEST ] ; then
         if [ ! -s /etc/systemd/system/opt-victronenergy.mount ] ; then
@@ -917,14 +921,14 @@ done
 
 ################# random directories and links
 $Q echo Checking symlinks
-fln "${MNT%/}/lib" "$R/l"
+fln "$MNT/lib" "$R/l"
 fln "lib" "$DEST/usr/l"
 # fln "$MNT/opt/victronenergy" "$R/opt/victronenergy"
 test -e "$R/opt/victronenergy" || mkdir -p "$R/opt/victronenergy"
-fln "${MNT%/}/usr/lib/fonts" "$R/usr/lib/fonts"
-fln "${MNT%/}/usr/lib/gconv" "$R/usr/lib/gconv"
+fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
+fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
 
-fln "${MNT%/}/var/www/venus" "$R/var/www/venus"
+fln "$MNT/var/www/venus" "$R/var/www/venus"
 
 # if /o/v is a mountpoint, assume that it's our overlay,
 # thus we write to that. Otherwise we write to the overlay's
@@ -1155,8 +1159,8 @@ fi
 
 mkdir -p "$R/v"
 chmod 755 "$R/v"
-fln "${MNT%/}/lib" "$R/v/l"
-fln "${MNT%/}/usr" "$R/v/u"
+fln "$MNT/lib" "$R/v/l"
+fln "$MNT/usr" "$R/v/u"
 
 mkdir -p "$OPTVIC/gui"
 chmod 755 "$OPTVIC/gui"
@@ -1167,11 +1171,11 @@ fln /lib/systemd/system/user@.service "$NTW/user@venus.service"
 fln /etc/systemd/system/venus.service "$R/etc/systemd/system/network-online.target.wants/venus.service"
 
 mkdir -p "$OPTVIC/gui/qt-components/qml"
-fln "${MNT%/}/usr/lib/qtopia/plugins/gfxdrivers" "$OPTVIC/gui/gfxdrivers"
-fln "${MNT%/}/usr/lib/qml/QtQml" "$OPTVIC/gui/qt-components/qml/QtQml"
+fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$OPTVIC/gui/gfxdrivers"
+fln "$MNT/usr/lib/qml/QtQml" "$OPTVIC/gui/qt-components/qml/QtQml"
 
 fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
-fln "${MNT%/}/usr/bin/dbus" "$R/usr/bin/dbus"
+fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
 
 ################# overlay
 
@@ -1186,7 +1190,7 @@ Requires=sysinit.target
 Where=/opt/victronenergy
 What=$USRV/opt
 Type=fuse.fuse-overlayfs
-Options=allow_other,lowerdir=${MNT%/}/opt/victronenergy,upperdir=$USRV/opt,workdir=$USRV/.opt
+Options=allow_other,lowerdir=$MNT/opt/victronenergy,upperdir=$USRV/opt,workdir=$USRV/.opt
 _END_
 
 ################# patches
