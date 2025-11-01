@@ -615,9 +615,9 @@ if [ ! -v MNT ] ; then
     MNT="${DEST:-/}"
 fi
 
-# drop trailing slashes from $MNT.
-shopt -s extglob
-MNT="${MNT%%+(/)}"
+# drop duplicate and trailing slashes from $MNT.
+MNT="$(realpath -m "$MNT")"
+[ "$MNT" = "/" ] && MNT=
 
 if [ -v NAME ] ; then
     if [ ! -v DEST ] ; then
