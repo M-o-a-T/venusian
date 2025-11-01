@@ -1293,6 +1293,9 @@ gen_user $NAME
 
 subs post
 
-test "$R" = "/" && systemctl daemon-reload && systemctl reload systemd-networkd
+if test "$R" = "/" ; then
+	systemctl daemon-reload
+	systemctl reload systemd-networkd || true  # may not be running
+fi
 
 $Q echo "Done."
