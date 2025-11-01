@@ -247,7 +247,7 @@ your Venus image.
 The file may be gzip-compressed; in this case you'll need sufficient space
 in /tmp for an uncompressed copy.
 
-The special value "--image=-web-" downloads the current Venus version.
+The special value `--image=-web-` downloads the current Venus version.
 The image will be deleted after it's unpacked.
 
 
