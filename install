@@ -121,6 +121,10 @@ case "$DEBARCH" in
         ;;
 esac
 
+PP=
+test -d "/usr/lib/python3/dist-packages/bcrypt" || PP="$PP python3-bcrypt"
+test -z "$PP" || apti "/" $PP
+
 test -s "$R/usr/bin/pstree" || I="$I psmisc"
 test -s "$R/usr/bin/sudo" || I="$I sudo"
 test -s "$R/usr/bin/make" || I="$I make"
