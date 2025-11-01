@@ -1,0 +1,12 @@
+#!/usr/bin/python3
+
+import bcrypt
+import sys
+
+passwd = sys.stdin.readline().strip()
+if not passwd:
+    exit(1)
+
+salt = bcrypt.gensalt()
+print(bcrypt.hashpw(passwd.encode("utf-8"), salt).decode("utf-8"))
+

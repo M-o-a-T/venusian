@@ -278,7 +278,7 @@ fcat "$R/$LIBV/.config/systemd/user.conf" <<_END_
 DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
 _END_
 
-mkdir -p "$R$LIBV/"{.etc,apps,conf,db,etc,log,themes,var/lib,venus}
+mkdir -p "$R$LIBV/"{.etc,apps,conf,db,etc,log,themes,var/lib/venus-www-sessions,venus}
 
 echo venusian > "$R$LIBV/etc/machine"
 echo venusian > "$R$LIBV/etc/image-type"
@@ -287,13 +287,16 @@ USERID=$(grep "^$NAME:" $R/etc/passwd | ( IFS=: read a b c d ; echo $c ) )
 env USER=$NAME UID=$USERID $USRV/bin/get-unique-id > $R$LIBV/conf/unique-id
 cp $R$LIBV/conf/unique-id $R$LIBV/venus/unique-id
 
-chr chown -R $NAME $LIBV/{.config,.etc,apps,conf,etc,db,log,venus}
+chr chown -R $NAME $LIBV/{.config,.etc,apps,conf,etc,db,var,log,venus}
 
 VPW="$R$LIBV/conf/vncpassword.txt"
 if test ! -s "$VPW" ; then
     read -s -p "VNC password: " pwd </dev/tty >/dev/tty 2>&1
-    echo "$pwd" >"$VPW"
+    echo "$pwd" | "$HERE/lib/bin/gen-pw" >"$VPW"
     pwd=
+elif [ $(stat -c '%s' "$VPW") -lt 50 ] ; then  # migrate
+    "$HERE/lib/bin/gen-pw" < "$VPW" >"$VPW.n"
+    mv "$VPW.n" "$VPW"
 fi
 
 mkdir -p "$R/$EV"
