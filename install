@@ -653,7 +653,8 @@ if [ -d "$USRV" ]; then
     echo -n "Stopping Venusian users: "
     if [ -d /etc/venusian ] ; then
         ls /etc/venusian | while read u ; do 
-            systemctl stop user@$u || true
+            systemctl stop user@$u >/dev/null 2>&1 || true  # old
+            systemctl stop venusian@$u || true
             echo -n "$u "
         done
     fi
@@ -1167,7 +1168,8 @@ chmod 755 "$OPTVIC/gui"
 
 NTW="$R/etc/systemd/system/network-online.target.wants"
 mkdir -p "$NTW"
-fln /lib/systemd/system/user@.service "$NTW/user@venus.service"
+rm -f "$NTW/user@venus.service"  # old installation
+fln /etc/systemd/system/venusian@.service "$NTW/venusian@venus.service"
 fln /etc/systemd/system/venus.service "$R/etc/systemd/system/network-online.target.wants/venus.service"
 
 mkdir -p "$OPTVIC/gui/qt-components/qml"
