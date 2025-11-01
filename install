@@ -615,9 +615,11 @@ if [ ! -v MNT ] ; then
     MNT="${DEST:-/}"
 fi
 
-# drop duplicate and trailing slashes from $MNT.
+# drop duplicate and trailing slashes from $MNT and $DEST.
 MNT="$(realpath -m "$MNT")"
 [ "$MNT" = "/" ] && MNT=
+
+DEST="$(realpath -m "$DEST")"
 
 if [ -v NAME ] ; then
     if [ ! -v DEST ] ; then
