@@ -145,7 +145,7 @@ for P in anyio asyncdbus lxml dbus pyudev pymodbus dnslib websockets click async
         PI="$PI $P"
     fi
 done
-test -z "$PI" || { test -s "$R/usr/bin/pip3" || I="$I python3-pip" }
+test -z "$PI" || test -s "$R/usr/bin/pip3" || I="$I python3-pip"
 subs pkg-r
 test -z "$I" || apti "$R" $I
 test -z "$PI" || pip3 install --no-cache-dir --break-system-packages $PI
