@@ -1015,8 +1015,8 @@ _END_
             echo >>$U ExecStart="$USRV/bin/start-gui"
             echo >>$U AmbientCapabilities=CAP_NET_BIND_SERVICE
             ;;
-        (ssh-tunnel) ;; # no remote access via some tunnel
-        (vrmlogger) ;; # no external logging
+        (ssh-tunnel) continue ;; # no remote access via some tunnel
+        (vrmlogger) continue ;; # no external logging
         (phpfpm)
             V=$( dpkg -s php-fpm | sed -ne s/Version:\ *//p | sed -e s/.*:// -e s/+.*// )
             if test -z "$V" ; then
