@@ -63,7 +63,7 @@ This script install The Venusian onto your computer, or a file system e.g. of a 
         Don't update our git submodules. (Useful while developing.)
 
     --sub=ADDON
-        Process add-on scripts.
+        Process add-on scripts. May be used more than once.
 
     --repo SOURCE
         Use this URL to fetch a sources.list file for additional Debian packages.
@@ -570,7 +570,8 @@ while : ; do
             if test -d "$HERE/install.d/$2" ; then
                 SUB+=("$2")
             else
-                echo "Unknown argument ('$2'). Exiting." >&2
+                echo "Unknown subpart ('$2'). Exiting." >&2
+		exit 2
             fi
             shift 2 ;;
         (--)
