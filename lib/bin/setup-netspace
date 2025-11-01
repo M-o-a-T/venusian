@@ -29,6 +29,7 @@ sleep 2  # don't we all hate race conditions
 ip link set venusian-$N master venusian
 ip netns exec $NS ip addr add 192.168.42.$SCREEN/24 dev eth0
 ip netns exec $NS ip link set eth0 up
+ip link set dev venusian-$N up
 #brctl show
 
 if [ -v EXT ] ; then
