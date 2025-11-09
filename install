@@ -623,6 +623,8 @@ if [ ! -v MNT ] ; then
     MNT="${DEST:-/}"
 fi
 
+REL=$(sed -ne 's/VERSION_CODENAME=//p' < $R/etc/os-release)
+
 # drop duplicate and trailing slashes from $MNT and $DEST.
 MNT="$(realpath -m "$MNT")"
 [ "$MNT" = "/" ] && MNT=
@@ -814,7 +816,8 @@ if [ "X$REPO" != "X-" ] ; then
 
     test -s "$R/etc/apt/trusted.gpg.d/venusian.archive.gpg" || wget -q -O "$R/etc/apt/trusted.gpg.d/venusian.archive.gpg" $REPOKEY
     test -s "$R/etc/apt/sources.list.d/smurf.list" || \
-    test -s "$R/etc/apt/sources.list.d/venusian.list" || wget -q -O "$R/etc/apt/sources.list.d/venusian.list" $REPO
+    test -s "$R/etc/apt/sources.list.d/venusian.list" || \
+    echo "deb [signed-by=/etc/apt/trusted.gpg.d/smurf.archive.gpg] http://build.smurf.noris.de $REL main" > "$R/etc/apt/sources.list.d/venusian.list"
 fi
 
 if ! test -v fast ; then
