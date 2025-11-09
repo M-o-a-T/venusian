@@ -1,10 +1,10 @@
 # The Venusian
 
 "The Venusian" is a hybrid of Victron Energy's "venus" operating system for the
-Raspberry Pi (and some others), and Debian GNU/Linux.
+Raspberry Pi (and some others), and "Debian" GNU/Linux.
 
-The Venusian allows you to run a Victron system on any Debian-based system.
-This includes your Intel laptop.
+The Venusian allows you to run a Victron energy management system on
+(almost) any Debian-based system. This includes your Intel laptop.
 
 This is of course impossible — but we're doing it anyway.
 
