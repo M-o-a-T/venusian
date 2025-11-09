@@ -783,6 +783,20 @@ mkdir -p "$R/etc/venus"
 mkdir -p "$R/data"
 mkdir -p "$R/$USRV"/{opt,.opt}
 
+fcat "$R/data/README" <<'_END_'
+This is the data directory of Venusian clients.
+
+Within the namespace of client NAME (usually "venus"),
+/var/lib/venusian/NAME is bind-mounted here.
+
+As you're not in a client namespace, this directory is empty.
+(Except for this file …)
+
+You can use `/usr/lib/venusian/bin/ven [ -u NAME ] bash`
+to start a shell that runs in the client namespace.
+
+_END_
+
 chr() {
     if [ -n "$R" ] ; then
         chroot "$R" "$@"
