@@ -14,7 +14,7 @@ thread_count 1
 max_packet_size 10240
 client_max_write_buffer_size 102400
 
-plugin /usr/libexec/flashmq/libflashmq-dbus-plugin.so
+plugin /v/u/libexec/flashmq/libflashmq-dbus-plugin.so
 expire_sessions_after_seconds 86400
 include_dir /run/user/${UID}/flashmq.d
 allow_anonymous true
