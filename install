@@ -17,8 +17,9 @@ This script install The Venusian onto your computer, or a file system e.g. of a 
         If you use this option without "--install",
         a new user for your existing Venus installation will be created.
 
-    --ext ADDR
-        Use this IP adress for the container. "dyn" uses DHCP.
+    --ext ADDR/NET
+        Use this IP adress on subnet NET for the container. "dyn" uses DHCP.
+        e.g. --ext=192.168.1.2/24 or --ext=dyn
 
     --fb
         Use the system's "real" video output.
