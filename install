@@ -426,6 +426,9 @@ Description=Venusian Manager for UID %i
 BindsTo=user-runtime-dir@%i.service
 After=systemd-logind.service user-runtime-dir@%i.service dbus.service systemd-oomd.service
 
+Wants=network-online.target
+After=network-online.target
+
 After=venusian-netns@%i.service venusian-initns@%i.service
 Requires=venusian-netns@%i.service venusian-initns@%i.service
 
