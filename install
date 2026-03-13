@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -u
+set -ue -o pipefail
 
 HERE="$(realpath "$(dirname "$0")")"
 
