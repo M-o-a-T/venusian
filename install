@@ -627,7 +627,8 @@ if [ ! -v DEST ] ; then
 fi
 
 if [ ! -v MNT ] ; then
-    MNT="${DEST:-/}"
+    #MNT="${DEST:-/}"
+    MNT=/opt/venus
 fi
 
 REL=$(sed -ne 's/VERSION_CODENAME=//p' < $R/etc/os-release)
@@ -944,6 +945,7 @@ lsrc | while read f ; do
         (S99rmnologin) ;; # systemd
         (S99stop-bootlogd) ;; # journald
 
+        (S20lifepo4wered-daemon) ;; # local addition
         (*)
             cat <<_ >/dev/stderr
 UNKNOWN: startup script: $f
@@ -1068,7 +1070,7 @@ _END_
 BASH_ARGV0="$fx"
 
 _
-                sed -e '/^#!.bin.sh/d' -e /etc.profile.d/d -e '/^exec 2>&1$/d' <$MNT/opt/victronenergy/service/$fx/run
+                sed -e '/^#!.bin.sh/d' -e /etc.profile.d/d -e '/^exec 2>&1$/d' <$DEST/opt/victronenergy/service/$fx/run
             ) | fcat "$OPTVIC/service/$fx/run"
             echo >>$U ExecStart=/opt/victronenergy/service/$fx/run "%N"
             ;;
