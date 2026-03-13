@@ -70,8 +70,8 @@ def main(config, user, verbose):
     """
     Process new Venus devices.
 
-    This program reads /run/venusian/serial-add (using `socat`)
-    and starts the appropriate service.
+    This program monitors udev events, via the system dbus.
+    It then starts the appropriate service.
 
     More than one config file can be given. They are concatenated.
     The first matching record is used.
