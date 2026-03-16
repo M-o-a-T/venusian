@@ -1157,8 +1157,10 @@ fi
 
 fcat "$R/etc/sysctl.d/10-venusian.conf" <<_END_
 net.ipv4.ip_forward=1
-net.ipv4.conf.all.route_localnet=1
-net.ipv4.conf.default.route_localnet=1
+
+kernel.panic = 10
+kernel.pid_max = 9999
+kernel.panic_on_oops = 1
 _END_
 
 mkdir -p $R/etc/nginx/sites-available
