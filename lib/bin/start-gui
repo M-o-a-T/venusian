@@ -12,8 +12,5 @@ export QT_PLUGIN_PATH=/v/u/lib/plugins:/usr/lib/venusian/opt/gui/gfxdrivers
 
 [ -v VNC ] || VNC=$(( 5900 + $SCREEN ))
 
-echo $$
-sleep 30
-
 exec /opt/victronenergy/gui/gui -neatvnc 127.0.0.1 -neatvncport $VNC
 

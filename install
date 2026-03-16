@@ -1211,9 +1211,9 @@ rm -f "$NTW/user@venus.service"  # old installation
 fln /etc/systemd/system/venusian@.service "$NTW/venusian@venus.service"
 fln /etc/systemd/system/venus.service "$R/etc/systemd/system/network-online.target.wants/venus.service"
 
-mkdir -p "$OPTVIC/gui/qt-components/qml"
 fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$OPTVIC/gui/gfxdrivers"
 fln "$MNT/usr/lib/qml/QtQml" "$OPTVIC/gui/qt-components/qml/QtQml"
+fln "$MNT/usr/lib/qml/QtQuick" "$OPTVIC/gui/qml/QtQuick"
 
 fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
 fln "$MNT/usr/bin/dbus" "$R/usr/bin/dbus"
