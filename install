@@ -927,6 +927,7 @@ lsrc | while read f ; do
         (S75avahi-autoipd) ;; # host problem
         (S80resolv-watch) ;; # systemd-resolved or some other host program
         (S82report-data-failure) ;; # local file system monitoring is not a Venus problem
+        (S90crash-logger) ;; # nope
         (S90crond)
             ## host OS
             # one builtin cron script, which does automated software updates,
