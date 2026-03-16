@@ -28,7 +28,9 @@ fi
 
 mkdir -p /etc/flashmq/conf.d
 
-fcat /etc/flashmq/flashmq.conf <<_END_
+if test ! -f /etc/flashmq/flashmq.conf ; then
+
+cat /etc/flashmq/flashmq.conf <<_END_
 # https://www.flashmq.org/documentation/config-file/
 
 #log_file    /var/log/flashmq/flashmq.log
@@ -57,3 +59,4 @@ listen {
 }
 
 _END_
+fi
