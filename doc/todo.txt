@@ -1,8 +1,6 @@
 This is still a proof-of-concept.
 
-* Bluetooth in the client doesn't work.
-  Probably needs access to the system dbus and/or some dbus policy rule.
-
-* Install avahi, publish and forward "venus.local".
+* Install avahi; publish and forward "venus.local".
+  (Nontrivial, because Avahi really wants the computer for itself.)
 
 * Document how to set up a "real" Venus[ian] system
