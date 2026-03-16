@@ -46,6 +46,7 @@ if [ -v EXT ] ; then
         ip netns exec $NS ip addr add $EXT dev eth1
         RT=$(ip -j -4 route | jq -r 'first( .[] | select(.dst=="default") | .gateway )')
         ip netns exec $NS ip route add default via $RT dev eth1
+    	ip route replace "$EXT" via 192.168.42.$SCREEN
     fi
     if test -n "$NC" ; then
         # The interface came up
