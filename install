@@ -289,7 +289,7 @@ echo venusian > "$R$LIBV/etc/image-type"
 
 USERID=$(grep "^$NAME:" $R/etc/passwd | ( IFS=: read a b c d ; echo $c ) )
 env USER=$NAME UID=$USERID $USRV/bin/get-unique-id > $R$LIBV/conf/unique-id
-cp $R$LIBV/conf/unique-id $R$LIBV/venus/unique-id
+ln -f $R$LIBV/conf/unique-id $R$LIBV/venus/unique-id
 
 chr chown -R $NAME $LIBV/{.config,.etc,apps,conf,etc,db,var,log,venus}
 
