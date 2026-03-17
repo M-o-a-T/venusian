@@ -32,6 +32,13 @@ ip netns exec $NS ip link set eth0 up
 ip link set dev venusian-$N up
 #brctl show
 
+masked() {
+    IFS=/ read ip prefix < <(echo $1)
+    IFS=. read i1 i2 i3 i4 < <(echo $ip)
+    mask=$(( ((1<<32)-1) & (((1<<32)-1) << (32 - $prefix)) ))
+    echo "$(( $i1 & ($mask>>24) )).$(( $i2 & ($mask>>16) )).$(( $i3 & ($mask>>8) )).$(( $i4 & $mask ))/$prefix"
+}
+
 if [ -v EXT ] ; then
     # Also use public networking.
 
@@ -43,17 +50,17 @@ if [ -v EXT ] ; then
     if [ "$EXT" = "dyn" ] ; then
         ip netns exec $NS dhclient -v -4 --no-pid -lf /var/lib/venusian/$N/dhcp eth1
     else
+        IFS=/ read EXTIP EXTPRE < <(echo $EXT)
         ip netns exec $NS ip addr add $EXT dev eth1
         RT=$(ip -j -4 route | jq -r 'first( .[] | select(.dst=="default") | .gateway )')
         ip netns exec $NS ip route add default via $RT dev eth1
         ip netns exec $NS ip route add $MAIN via 192.168.42.254
-        ip route replace "$EXT" via 192.168.42.$SCREEN
+        ip route add "$EXTIP/32" via 192.168.42.$SCREEN
     fi
     if test -n "$NC" ; then
         # The interface came up
         systemctl reload flashmq || true
     fi
-	
 
 else
     # Default route via the bridge
