@@ -474,6 +474,9 @@ ExecStartPre=+mkdir -p /run/venusian/%i
 ExecStartPre=+chown %i /run/venusian/%i
 #ExecStartPost=+$USRV/bin/iptables-redirect on
 #ExecStopPost=+$USRV/bin/iptables-redirect off
+
+[Install]
+WantedBy=default.target
 _END_
 
 # Venus service (shortcut)
