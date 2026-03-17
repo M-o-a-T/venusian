@@ -101,58 +101,58 @@ apti() {
 }
 
 packages() {
-I=""
-PI=""
-DEBARCH="$(chr dpkg --print-architecture)"
-case "$DEBARCH" in
-    (armhf)
-        # nothing to do
-        ;;
-    (*)
-        PAGESIZE=$(getconf PAGE_SIZE)
-        if [ "$DEBARCH" = "arm64" ] && [ "$PAGESIZE" -eq 4096 ]; then
-            # 64-bit arm host with 4 KB pages → native armhf should work
-            # if CONFIG_COMPAT=y is set in the kernel
-            :
+    I=""
+    PI=""
+    DEBARCH="$(chr dpkg --print-architecture)"
+    case "$DEBARCH" in
+        (armhf)
+            # nothing to do
+            ;;
+        (*)
+            PAGESIZE=$(getconf PAGE_SIZE)
+            if [ "$DEBARCH" = "arm64" ] && [ "$PAGESIZE" -eq 4096 ]; then
+                # 64-bit arm host with 4 KB pages → native armhf should work
+                # if CONFIG_COMPAT=y is set in the kernel
+                :
+            else
+                test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
+                test -s "$R/usr/share/binfmts/qemu-arm" || test -s "$R/usr/lib/binfmt.d/qemu-arm.conf" || I="$I qemu-user-binfmt"
+            fi
+            ;;
+    esac
+
+    PP=
+    test -d "/usr/lib/python3/dist-packages/bcrypt" || PP="$PP python3-bcrypt"
+    test -z "$PP" || apti "/" $PP
+
+    test -s "$R/usr/bin/pstree" || I="$I psmisc"
+    test -s "$R/usr/bin/sudo" || I="$I sudo"
+    test -s "$R/usr/bin/make" || I="$I make"
+    test -s "$R/usr/sbin/iptables" || I="$I iptables"
+    test -s "$R/usr/bin/jq" || I="$I jq"
+    test -s "$R/usr/bin/nc.openbsd" || I="$I netcat-openbsd"
+    test -s "$R/usr/bin/socat" || I="$I socat"
+    test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
+    test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
+    test -s "$R/usr/sbin/nginx" || I="$I nginx"
+    test -s "$R/usr/share/doc/php-fpm" || I="$I php-fpm"
+    test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
+    test -d "$R/usr/lib/python3/dist-packages/dbus_fast" || I="$I python3-dbus-fast"
+    test -d "$R/usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
+    test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
+
+    for P in anyio asyncdbus lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml attr outcome trio ; do
+        test -d "$R/usr/lib/python3/dist-packages/$P" && continue
+        if apt-cache show "python3-$P" >/dev/null 2>&1; then
+            I="$I python3-$P"
         else
-            test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
-            test -s "$R/usr/share/binfmts/qemu-arm" || test -s "$R/usr/lib/binfmt.d/qemu-arm.conf" || I="$I qemu-user-binfmt"
+            PI="$PI $P"
         fi
-        ;;
-esac
-
-PP=
-test -d "/usr/lib/python3/dist-packages/bcrypt" || PP="$PP python3-bcrypt"
-test -z "$PP" || apti "/" $PP
-
-test -s "$R/usr/bin/pstree" || I="$I psmisc"
-test -s "$R/usr/bin/sudo" || I="$I sudo"
-test -s "$R/usr/bin/make" || I="$I make"
-test -s "$R/usr/sbin/iptables" || I="$I iptables"
-test -s "$R/usr/bin/jq" || I="$I jq"
-test -s "$R/usr/bin/nc.openbsd" || I="$I netcat-openbsd"
-test -s "$R/usr/bin/socat" || I="$I socat"
-test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
-test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
-test -s "$R/usr/sbin/nginx" || I="$I nginx"
-test -s "$R/usr/share/doc/php-fpm" || I="$I php-fpm"
-test -d "$R/usr/lib/python3/dist-packages/dbus_next" || I="$I python3-dbus-next"
-test -d "$R/usr/lib/python3/dist-packages/dbus_fast" || I="$I python3-dbus-fast"
-test -d "$R/usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
-test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
-
-for P in anyio asyncdbus lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml attr outcome trio ; do
-    test -d "$R/usr/lib/python3/dist-packages/$P" && continue
-    if apt-cache show "python3-$P" >/dev/null 2>&1; then
-        I="$I python3-$P"
-    else
-        PI="$PI $P"
-    fi
-done
-test -z "$PI" || test -s "$R/usr/bin/pip3" || I="$I python3-pip"
-subs pkg-r
-test -z "$I" || apti "$R" $I
-test -z "$PI" || pip3 install --no-cache-dir --break-system-packages $PI
+    done
+    test -z "$PI" || test -s "$R/usr/bin/pip3" || I="$I python3-pip"
+    subs pkg-r
+    test -z "$I" || apti "$R" $I
+    test -z "$PI" || pip3 install --no-cache-dir --break-system-packages $PI
 }
 
 subs() {
@@ -165,7 +165,7 @@ subs() {
     done
 }
 
-_chg() {
+chg() {
     # check: do we replace DST from SRC?
     SRC="$1"
     DST="$2"
@@ -197,7 +197,7 @@ fchg() {
     # check: do we not replace DST from SRC?
     SRC="$1"
     DST="$2"
-    _chg "$SRC" "$DST" || return 0
+    chg "$SRC" "$DST" || return 0
     rm -f "$DST"
     mkdir -p "$(dirname "$DST")"
     touch "$DST"
@@ -240,26 +240,26 @@ next_screen() {
 gen_user() {
     local NAME="$1" LIBV=$LIBVV/$NAME
 
-if grep -qs "^$NAME:" "$R/etc/passwd" ; then
-    $Q echo Updating user $NAME
-else
-    $Q echo Generating user $NAME
-    chr /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
-fi
+    if grep -qs "^$NAME:" "$R/etc/passwd" ; then
+        $Q echo Updating user $NAME
+    else
+        $Q echo Generating user $NAME
+        chr /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
+    fi
 
-grep -qs "^$NAME:" "$R/etc/passwd" || chr /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
+    grep -qs "^$NAME:" "$R/etc/passwd" || chr /sbin/adduser --disabled-login --home "$LIBV" --ingroup venus --system --comment "Venus Main User" $NAME
 
-chr /sbin/adduser $NAME systemd-journal 2>/dev/null
-chr /sbin/adduser $NAME dialout 2>/dev/null
-chr /sbin/adduser $NAME bluetooth 2>/dev/null
-test ! -v FB || chr /sbin/adduser $NAME video 2>/dev/null
+    chr /sbin/adduser $NAME systemd-journal 2>/dev/null
+    chr /sbin/adduser $NAME dialout 2>/dev/null
+    chr /sbin/adduser $NAME bluetooth 2>/dev/null
+    test ! -v FB || chr /sbin/adduser $NAME video 2>/dev/null
 
-SC="$LIBV/.config/systemd/user.control"
-mkdir -p "$R/$SC/default.target.wants/"
-fln "$SERVICE" "$R/$LIBV/.config/systemd/user"
-fln ".config/systemd/user.control" "$R/$LIBV/service"
+    SC="$LIBV/.config/systemd/user.control"
+    mkdir -p "$R/$SC/default.target.wants/"
+    fln "$SERVICE" "$R/$LIBV/.config/systemd/user"
+    fln ".config/systemd/user.control" "$R/$LIBV/service"
 
-fcat "$R/$LIBV/nginx-fwd.conf" <<_END_
+    fcat "$R/$LIBV/nginx-fwd.conf" <<_END_
 # XXX TODO this is broken when using native networking
 #
 location /$NAME/ {
@@ -277,39 +277,39 @@ location /$NAME/ {
 }
 _END_
 
-fcat "$R/$LIBV/.config/systemd/user.conf" <<_END_
+    fcat "$R/$LIBV/.config/systemd/user.conf" <<_END_
 [Manager]
 DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
 _END_
 
-mkdir -p "$R$LIBV/"{.etc,apps,conf,db,etc,log,themes,var/lib/venus-www-sessions,venus}
+    mkdir -p "$R$LIBV/"{.etc,apps,conf,db,etc,log,themes,var/lib/venus-www-sessions,venus}
 
-echo venusian > "$R$LIBV/etc/machine"
-echo venusian > "$R$LIBV/etc/image-type"
+    echo venusian > "$R$LIBV/etc/machine"
+    echo venusian > "$R$LIBV/etc/image-type"
 
-USERID=$(grep "^$NAME:" $R/etc/passwd | ( IFS=: read a b c d ; echo $c ) )
-env USER=$NAME UID=$USERID $USRV/bin/get-unique-id > $R$LIBV/conf/unique-id
-ln -f $R$LIBV/conf/unique-id $R$LIBV/venus/unique-id
+    USERID=$(grep "^$NAME:" $R/etc/passwd | ( IFS=: read a b c d ; echo $c ) )
+    env USER=$NAME UID=$USERID $USRV/bin/get-unique-id > $R$LIBV/conf/unique-id
+    ln -f $R$LIBV/conf/unique-id $R$LIBV/venus/unique-id
 
-chr chown -R $NAME $LIBV/{.config,.etc,apps,conf,etc,db,var,log,venus}
+    chr chown -R $NAME $LIBV/{.config,.etc,apps,conf,etc,db,var,log,venus}
 
-VPW="$R$LIBV/conf/vncpassword.txt"
-if test ! -s "$VPW" ; then
-    read -s -p "VNC password: " pwd </dev/tty >/dev/tty 2>&1
-    echo "$pwd" | "$HERE/lib/bin/gen-pw" >"$VPW"
-    pwd=
-elif [ $(stat -c '%s' "$VPW") -lt 50 ] ; then  # migrate
-    "$HERE/lib/bin/gen-pw" < "$VPW" >"$VPW.n"
-    mv "$VPW.n" "$VPW"
-fi
+    VPW="$R$LIBV/conf/vncpassword.txt"
+    if test ! -s "$VPW" ; then
+        read -s -p "VNC password: " pwd </dev/tty >/dev/tty 2>&1
+        echo "$pwd" | "$HERE/lib/bin/gen-pw" >"$VPW"
+        pwd=
+    elif [ $(stat -c '%s' "$VPW") -lt 50 ] ; then  # migrate
+        "$HERE/lib/bin/gen-pw" < "$VPW" >"$VPW.n"
+        mv "$VPW.n" "$VPW"
+    fi
 
-mkdir -p "$R/$EV"
+    mkdir -p "$R/$EV"
 
-## Networking.
+    ## Networking.
 
-# Step 1: a bridged network interface for Venusian.
+    # Step 1: a bridged network interface for Venusian.
 
-fcat "$R/etc/systemd/system/venusian-net.service" <<_END_
+    fcat "$R/etc/systemd/system/venusian-net.service" <<_END_
 [Unit]
 Description=Optional bridge interface for Venusian
 
@@ -326,9 +326,9 @@ ExecStop=true
 # (b) we attach the system's FlashMQ to the interface's IP address
 _END_
 
-# Step 1a: tell systemd-networkd to ignore new bridged nodes
-#
-fcat "$R/etc/systemd/network/00-venusian-any.network" <<_END_
+    # Step 1a: tell systemd-networkd to ignore new bridged nodes
+    #
+    fcat "$R/etc/systemd/network/00-venusian-any.network" <<_END_
 [Match]
 Name=venusian-*
 
@@ -338,9 +338,9 @@ Unmanaged=yes
 RequiredForOnline=no
 _END_
 
-# Step 1bc: tell systemd-networkd to handle the bridge
-#
-fcat "$R/etc/systemd/network/00-venusian-br.netdev" <<_END_
+    # Step 1bc: tell systemd-networkd to handle the bridge
+    #
+    fcat "$R/etc/systemd/network/00-venusian-br.netdev" <<_END_
 [NetDev]
 Name=venusian
 Kind=bridge
@@ -349,7 +349,7 @@ Kind=bridge
 STP=no
 _END_
 
-fcat "$R/etc/systemd/network/00-venusian.network" <<_END_
+    fcat "$R/etc/systemd/network/00-venusian.network" <<_END_
 [Match]
 Name=venusian
 
@@ -373,8 +373,8 @@ Address=192.168.42.254/24
 #PoolSize=120
 _END_
 
-# Step 2: create a per-user network namespace
-fcat "$R/etc/systemd/system/venusian-netns@.service" <<_END_
+    # Step 2: create a per-user network namespace
+    fcat "$R/etc/systemd/system/venusian-netns@.service" <<_END_
 [Unit]
 Description=Network namespace for Venusian %i
 StopWhenUnneeded=true
@@ -397,8 +397,8 @@ ExecStart=/usr/lib/venusian/bin/setup-netspace %i
 ExecStop=ip netns delete venusian-%i
 _END_
 
-# Step 2a: make the initial network namespace available
-fcat "$R/etc/systemd/system/venusian-initns@.service" <<_END_
+    # Step 2a: make the initial network namespace available
+    fcat "$R/etc/systemd/system/venusian-initns@.service" <<_END_
 [Unit]
 Description=Init namespace for Venusian %i
 StopWhenUnneeded=true
@@ -418,9 +418,9 @@ ExecStart=/usr/lib/venusian/bin/start-net %i
 ExecStop=/usr/lib/venusian/bin/stop-net %i
 _END_
 
-# Step 3: Run the user.
-#
-fcat "$R/etc/systemd/system/venusian@.service" <<_END_
+    # Step 3: Run the user.
+    #
+    fcat "$R/etc/systemd/system/venusian@.service" <<_END_
 [Unit]
 Description=Venusian Manager for UID %i
 BindsTo=user-runtime-dir@%i.service
@@ -479,8 +479,8 @@ ExecStartPre=+chown %i /run/venusian/%i
 WantedBy=default.target
 _END_
 
-# Venus service (shortcut)
-fcat "$R/etc/systemd/system/venus.target" <<_END_
+    # Venus service (shortcut)
+    fcat "$R/etc/systemd/system/venus.target" <<_END_
 [Unit]
 Requires=venusian@venus.service
 
@@ -488,17 +488,17 @@ Requires=venusian@venus.service
 RequiredBy=multi-user.target
 _END_
 
-if [ ! -s "$R/$EV/vars" ] || ! grep -qs "^SCREEN=" "$R/$EV/vars" ; then
-    echo SCREEN=$SCREEN >>"$R/$EV/vars"
-fi
-if [ -v FB ] ; then
-    echo FB=y >>"$R/$EV/vars"
-fi
-if [ -v EXT ] ; then
-    echo "EXT='$EXT'" >>"$R/$EV/vars"
-fi
+    if [ ! -s "$R/$EV/vars" ] || ! grep -qs "^SCREEN=" "$R/$EV/vars" ; then
+        echo SCREEN=$SCREEN >>"$R/$EV/vars"
+    fi
+    if [ -v FB ] ; then
+        echo FB=y >>"$R/$EV/vars"
+    fi
+    if [ -v EXT ] ; then
+        echo "EXT='$EXT'" >>"$R/$EV/vars"
+    fi
 
-subs user
+    subs user
 } # END gen_user
 
 
@@ -514,7 +514,7 @@ unset TEMP
 
 Q=
 verb=
-root=/
+ROOT=/
 FORCE=y
 SUB=()
 SUB_UPD=y
@@ -572,7 +572,7 @@ while : ; do
             img="$2"
             shift 2 ;;
         (-r|--root)
-            root="$2"
+            ROOT="$2"
             shift 2 ;;
         (-m|--mount)
             MNT="$2"
@@ -616,7 +616,7 @@ trap 'rm -r $temp' 0 1 2 15
 cd $temp
 umask 022
 
-R="$(realpath "$root")"
+R="$(realpath "$ROOT")"
 
 LIBVV=/var/lib/venusian
 USRV=/usr/lib/venusian
@@ -780,6 +780,11 @@ fi
 
 if ! VERS=$(sed -ne 's/.* \(v[0-9]\.[0-9][0-9]*\).*/\1/p' <"$DEST/etc/issue") ; then
     echo Could not detect the Venus version in "'$DEST/etc/issue'" >&2
+    exit 1
+fi
+V=$(head -1 "$DEST"/opt/victronenergy/version | sed -e 's/^v//')
+if dpkg --compare-versions $V lt $V1 || dpkg --compare-versions $V gt $V2 ; then
+    echo "This script only works with Venus $V1 to $V2." >&2
     exit 1
 fi
 if test -f "$root" ; then
