@@ -18,6 +18,7 @@ After=localsettings.service
 _END_
 
 S="$HERE/ext/dbus-serialbattery/dbus-serialbattery/qml/gui-v2/3.7x"
+T="$HERE/ext/dbus-serialbattery/dbus-serialbattery/ext/venus-os_dbus-serialbattery_gui-v2/archive/venus-os_v3.7x"
 D="$OPTVIC/gui/qml/"
 
 if grep -qs 'PageBattery {}' "$OPTVIC/gui/qml/PageMain.qml" ; then
@@ -27,3 +28,13 @@ fi
 rsync -rEt --inplace "$S"/PageBatteryDbusSerialbattery* "$D"
 rsync -Et --inplace "$S"/PageBattery.qml "$D"/PageBatterySerial.qml
 
+## now unpack wasm
+cd /tmp
+rm -f wasm
+ln -s "$WWW/gui-v2" wasm
+unzip $T/venus-webassembly.zip
+cd $WWW
+rm -f Makefile
+if [ ! -f "venus-gui-v2.wasm.gz" ]; then
+    gzip venus-gui-v2.wasm
+fi
