@@ -1,0 +1,19 @@
+[Unit]
+Description=Serve a Bluetooth BMS on %i
+After=localsettings.service
+Requires=localsettings.service
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/venusian/bin/serial-ble $i
+Restart=always
+RestartSec=5
+EnvironmentFile=-/etc/venusian/vars
+EnvironmentFile=-/etc/venusian/%u/%p
+EnvironmentFile=-/etc/venusian/%u/%N
+EnvironmentFile=-/run/user/%U/vars
+EnvironmentFile=-/run/user/%U/%p
+EnvironmentFile=-/run/user/%U/%N
+
+[Install]
+WantedBy=default.target

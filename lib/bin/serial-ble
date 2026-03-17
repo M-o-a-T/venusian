@@ -1,0 +1,12 @@
+#!/bin/bash
+
+typ="${1%_*}"
+adr="${1#*_}"
+if test "$1" == "$adr" ; then
+    echo "Usage: $0 TYP_XX:XX:XX:XX:XX:XX" >&2
+    echo "TYP is e.g. Jkbms" >&2
+    echo "ARG is: '$1'" >&2
+    exit 1
+fi
+
+exec /opt/victronenergy/dbus-serialbattery/dbus-serialbattery.py ${typ}_Ble ${adr}
