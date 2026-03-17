@@ -4,6 +4,9 @@ set -ue -o pipefail
 
 HERE="$(realpath "$(dirname "$0")")"
 
+V1=3.70
+V2=3.79
+
 usage() {
     cat <<_END_
 Usage: $0
@@ -83,7 +86,7 @@ _END_
     if [ "$(id -u)" != 0 ] ; then
         cat <<_END_
 
-NB: This script needs to run as root.
+NB: This script needs to run as root. It applies to Venus $V1 to $V2 (inclusive).
 _END_
     fi
     exit 1
@@ -787,8 +790,9 @@ if dpkg --compare-versions $V lt $V1 || dpkg --compare-versions $V gt $V2 ; then
     echo "This script only works with Venus $V1 to $V2." >&2
     exit 1
 fi
-if test -f "$root" ; then
-    echo TODO root as an Image >&2
+if test -f "$R" ; then
+    echo "TODO  Installing on an image is not implemented." >&2
+    echo "TODO  You need to loopback-mount it manually." >&2
     exit 1
 fi
 
