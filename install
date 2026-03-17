@@ -435,8 +435,8 @@ After=network-online.target
 After=venusian-netns@%i.service venusian-initns@%i.service
 Requires=venusian-netns@%i.service venusian-initns@%i.service
 
-After=opt-victronenergy.mount $MNT_U
-Requires=opt-victronenergy.mount $MNT_U
+After=opt-victronenergy.mount var-www-venus.mount $MNT_U
+Requires=opt-victronenergy.mount var-www-venus.mount $MNT_U
 
 [Service]
 User=%i
@@ -802,6 +802,7 @@ mkdir -p "$R/opt/victronenergy"
 mkdir -p "$R/etc/venus"
 mkdir -p "$R/data"
 mkdir -p "$R/$USRV"/{opt,.opt}
+mkdir -p "$R/$USRV"/{www,.www}
 
 fcat "$R/data/README" <<'_END_'
 This is the data directory of Venusian clients.
@@ -978,7 +979,8 @@ test -e "$R/opt/victronenergy" || mkdir -p "$R/opt/victronenergy"
 fln "$MNT/usr/lib/fonts" "$R/usr/lib/fonts"
 fln "$MNT/usr/lib/gconv" "$R/usr/lib/gconv"
 
-fln "$MNT/var/www/venus" "$R/var/www/venus"
+if test -L "$R/var/www/venus" ; then rm "$R/var/www/venus"; fi
+mkdir -p "$R/var/www/venus"
 
 # if /o/v is a mountpoint, assume that it's our overlay,
 # thus we write to that. Otherwise we write to the overlay's
@@ -993,6 +995,21 @@ if mountpoint -q "$R/opt/victronenergy" ; then
     fi
 else
     OPTVIC="$R/$USRV/opt"
+fi
+
+# if /o/v is a mountpoint, assume that it's our overlay,
+# thus we write to that. Otherwise we write to the overlay's
+# top directory.
+if mountpoint -q "$R/var/www/venus" ; then
+    if ! [ -d "$R/var/www/venus/fonts" ] ; then
+        echo "'$R/var/www/venus' is mounted but empty. Unmounting." >&2
+        umount "$R/var/www/venus"
+        WWW="$R/$USRV/www"
+    else
+        WWW="$R/var/www/venus"
+    fi
+else
+    WWW="$R/$USRV/www"
 fi
 
 ################# Services
@@ -1244,6 +1261,18 @@ Where=/opt/victronenergy
 What=$USRV/opt
 Type=fuse.fuse-overlayfs
 Options=allow_other,lowerdir=$MNT/opt/victronenergy,upperdir=$USRV/opt,workdir=$USRV/.opt
+_END_
+
+fcat "$R/etc/systemd/system/var-www-venus.mount" <<_END_
+[Unit]
+After=opt-victronenergy.mount
+Requires=opt-victronenergy.mount
+
+[Mount]
+Where=/var/www/venus
+What=$USRV/www
+Type=fuse.fuse-overlayfs
+Options=allow_other,lowerdir=$MNT/var/www/venus,upperdir=$USRV/www,workdir=$USRV/.www
 _END_
 
 ################# patches
