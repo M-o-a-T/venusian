@@ -55,7 +55,7 @@ if [ -v EXT ] ; then
         RT=$(ip -j -4 route | jq -r 'first( .[] | select(.dst=="default") | .gateway )')
         ip netns exec $NS ip route add default via $RT dev eth1
         ip netns exec $NS ip route add $MAIN via 192.168.42.254
-        ip route add "$EXTIP/32" via 192.168.42.$SCREEN
+        ip route replace "$EXTIP/32" via 192.168.42.$SCREEN
     fi
     if test -n "$NC" ; then
         # The interface came up
@@ -64,7 +64,7 @@ if [ -v EXT ] ; then
 
 else
     # Default route via the bridge
-    ip netns exec $NS ip route add default via 192.168.42.254 dev eth0
+    ip netns exec $NS ip route add default via 192.168.42.254 dev eth0 || true
     
 fi
 
