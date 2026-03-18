@@ -285,7 +285,7 @@ _END_
 DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
 _END_
 
-    mkdir -p "$R$LIBV/"{.etc,apps,conf,db,etc,log,themes,var/lib/venus-www-sessions,venus}
+    mkdir -p "$R$LIBV/"{.etc,apps,conf,db,etc,log,themes,var/lib/venus-www-sessions,venus,volatile}
 
     echo venusian > "$R$LIBV/etc/machine"
     echo venusian > "$R$LIBV/etc/image-type"
@@ -466,6 +466,7 @@ AmbientCapabilities=CAP_SYS_ADMIN  # sigh
 AmbientCapabilities=CAP_CHOWN  # more sigh
 
 BindPaths=/var/lib/venusian/%i:/data
+BindPaths=/var/lib/venusian/%i/volatile:/var/volatile
 #BindPaths=/var/lib/venusian/%i/etc:/etc/venus  # overlay, ExecStartPre
 TemporaryFileSystem=/run/www
 
@@ -801,6 +802,7 @@ DEST="$(realpath "$DEST")"
 mkdir -p "$R/opt/victronenergy"
 mkdir -p "$R/etc/venus"
 mkdir -p "$R/data"
+mkdir -p "$R/var/volatile"
 mkdir -p "$R/$USRV"/{opt,.opt}
 mkdir -p "$R/$USRV"/{www,.www}
 
