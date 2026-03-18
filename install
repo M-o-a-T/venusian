@@ -285,7 +285,7 @@ _END_
 DefaultEnvironment="PATH=$USRV/bin:/bin:/sbin"
 _END_
 
-    mkdir -p "$R$LIBV/"{.etc,apps,conf,db,etc,log,themes,var/lib/venus-www-sessions,venus,volatile}
+    mkdir -p "$R$LIBV/"{.etc,apps,conf,db,etc,log,themes,var/lib/venus-www-sessions,venus,volatile/tokens}
 
     echo venusian > "$R$LIBV/etc/machine"
     echo venusian > "$R$LIBV/etc/image-type"
@@ -294,7 +294,7 @@ _END_
     env USER=$NAME UID=$USERID $USRV/bin/get-unique-id > $R$LIBV/conf/unique-id
     ln -f $R$LIBV/conf/unique-id $R$LIBV/venus/unique-id
 
-    chr chown -R $NAME $LIBV/{.config,.etc,apps,conf,etc,db,var,log,venus}
+    chr chown -R $NAME $LIBV/{.config,.etc,apps,conf,etc,db,var,log,venus,volatile}
 
     VPW="$R$LIBV/conf/vncpassword.txt"
     if test ! -s "$VPW" ; then
@@ -1243,7 +1243,8 @@ fln /etc/systemd/system/venusian@.service "$NTW/venusian@venus.service"
 fln /etc/systemd/system/venus.service "$R/etc/systemd/system/network-online.target.wants/venus.service"
 
 fln "$MNT/usr/lib/qtopia/plugins/gfxdrivers" "$OPTVIC/gui/gfxdrivers"
-fln "$MNT/usr/lib/qml/QtQml" "$OPTVIC/gui/qt-components/qml/QtQml"
+mkdir -p "$OPTVIC/gui/qml"
+fln "$MNT/usr/lib/qml/QtQml" "$OPTVIC/gui/qml/QtQml"
 fln "$MNT/usr/lib/qml/QtQuick" "$OPTVIC/gui/qml/QtQuick"
 
 fln "$USRV/bin/get-unique-id" "$R/sbin/get-unique-id"
