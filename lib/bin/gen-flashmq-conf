@@ -30,12 +30,19 @@ _
 if nc -v -q 0 192.168.42.254 1883 </dev/null ; then
     id="$(cat /data/conf/unique-id)"
     test -n "$id"
-    cat >> /run/user/$UID/flashmq.conf <<_
+    cat > /run/user/$UID/flashmq.d/bridge.conf <<_
 bridge {
+    protocol_version mqtt5
+    bridge_protocol_bit true
+
     address 192.168.42.254
-    publish W/$id/# 1
+
+    publish S/$id/# 1
     publish N/$id/# 1
     subscribe R/$id/# 1
+    subscribe W/$id/# 1
+    publish   I/$id/out/#
+    subscribe I/$id/in/#
 }
 _
 fi
