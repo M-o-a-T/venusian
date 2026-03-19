@@ -1085,6 +1085,9 @@ _END_
             ;;
         (ssh-tunnel) continue ;; # no remote access via some tunnel
         (vrmlogger) continue ;; # no external logging
+        (hub4control)
+            echo >>$U "ExecStart=/opt/victronenergy/hub4control/hub4control --dbus session"
+            ;;
         (phpfpm)
             V=$( dpkg -s php-fpm | sed -ne s/Version:\ *//p | sed -e s/.*:// -e s/+.*// )
             if test -z "$V" ; then
