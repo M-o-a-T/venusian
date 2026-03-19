@@ -6,9 +6,6 @@ test $# = 0
 
 mkdir -p /run/user/$UID/flashmq.d
 
-MQTT=1883
-MQTTWS=9001
-
 cat > /run/user/$UID/flashmq.conf <<_
 max_packet_size 10240
 client_max_write_buffer_size 1048576
