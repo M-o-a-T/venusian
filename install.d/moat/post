@@ -1,1 +1,1 @@
-chroot "$R" systemctl enable moat-kv
+# chroot "$R" systemctl enable moat-kv
