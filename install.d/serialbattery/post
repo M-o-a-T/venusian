@@ -28,13 +28,18 @@ fi
 rsync -rEt --inplace "$S"/PageBatteryDbusSerialbattery* "$D"
 rsync -Et --inplace "$S"/PageBattery.qml "$D"/PageBatterySerial.qml
 
-## now unpack wasm
-cd /tmp
-rm -f wasm
-ln -s "$WWW/gui-v2" wasm
-unzip $T/venus-webassembly.zip
-cd $WWW
-rm -f Makefile
-if [ ! -f "venus-gui-v2.wasm.gz" ]; then
-    gzip venus-gui-v2.wasm
+## unzip their modified GUI
+if true ; then
+    cd /tmp
+    rm -f wasm
+    mkdir -p "$WWW/gui-v2"
+    ln -s "$WWW/gui-v2" wasm
+    unzip $T/venus-webassembly.zip
+    cd wasm
+    rm -f Makefile
+    if [ ! -f "venus-gui-v2.wasm.gz" ]; then
+        gzip venus-gui-v2.wasm
+    fi
+    rm /tmp/wasm
+    cd "$HERE"
 fi
