@@ -200,11 +200,26 @@ all-zeroes (or 123456789).
 
 #### Bluetooth
 
-* `systemctl start venusian@venus`  # if not already running
-* `vctl enable --now serialbattery-ble@Jkbms_Ble=XX:XX:XX:XX:XX:XX`
+As root:
 
-… except for the fact that Bluetooth isn't the most stable way to connect
-a battery. Seriously: use RS485 instead.
+* `systemctl enable --now bluetooth`
+* `bluetoothctl`
+  * `scan on`
+  * `devices`
+
+replace the *XX:XX*, below, with the MAC address of your BMS.
+
+As the Venus user (`/usr/lib/venusian/bin/ven /bin/bash`):
+
+* `systemctl --user start serial-ble@Jkbms_XX:XX:XX:XX:XX:XX`
+
+Unfortunately, restarting this currently requires some manual work:
+
+* `cd ~/service/default.target.wants`
+* `ln -s /usr/lib/venusian/service/serial-ble@.service serial-ble@Jkbms_XX:XX:XX:XX:XX:XX.service`
+* `systemctl --user daemon-reload`
+
+
 
 
 ### Multi-site operation 
@@ -375,7 +390,6 @@ Let's assume you have an SD card for a Raspberry Pi 4 you'd like to Venusianize.
 * systemctl start venusian@venus
 * vncclient localhost:1
 
-
 ## helper scripts
 
 All scripts are located in `/usr/lib/venusian/bin`. You can add this
@@ -471,34 +485,14 @@ While we recommend to use paths without whitespace, it's still good practice
 to quote **all** uses of these variables.
 
 
-#### Overlay file system
+#### Overlay file systems
 
 The installer does not create a complete copy of `/opt/victronenergy` (the
-directory Victron ships its code in). Instead, an overlay file system is
-used. `$OVER` contains the path to the "upper directory" of the overlay
-file system that we use to selectively alter files.
+directory Victron ships its code in) and `/var/www/venus`. Instead, overlay
+file systems are used.
 
-However, this might change, as userspace overlays impose a certain
-runtime overhead.
-
-Thus, a test whether to replace a file with a patched version should succeed if
-any of
-
-* `$FORCE` is set
-* the destination doesn't exist
-* source and destination files are identical
-* the source is newer
-
-It should always `rm -f` the destination and `mkdir -p` any intermediate
-directories.
-
-The helper function `fchg ‹source› ‹dest›` does this for you. It exits with
-return code 1 if you don't need to do anything. Otherwise the destination
-is a new empty file.
-
-The helper `fln` creates a symlink at ‹dest› that points to ‹source›.
-
-The overlay file system is mounted with an `opt-victronenergy.mount` systemd unit.
+The overlay file systems are mounted with `opt-victronenergy.mount` and
+`var-www-venus.mount` systemd units.
 
 
 ## Changes to the host system
