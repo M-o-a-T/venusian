@@ -688,6 +688,7 @@ if [ -d "$USRV" ]; then
     echo "."
     systemctl stop venusian-net || true
     umount /opt/victronenergy || true
+    umount /var/www/venus || true
     umount $DEST || true
     rm -r "$USRV"
 fi
