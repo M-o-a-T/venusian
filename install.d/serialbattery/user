@@ -1,4 +1,5 @@
-if test ! -s "$LIBV/dbus-serialbattery.ini" ; then
-    cp -a "$HERE/ext/dbus-serialbattery/dbus-serialbattery/config.default.ini" "$LIBV/dbus-serialbattery.ini"
+mkdir -p "$LIBV/conf/serialbattery"
+if test ! -s "$LIBV/conf/serialbattery/default.ini" ; then
+    cp -a "$HERE/ext/dbus-serialbattery/dbus-serialbattery/config.default.ini" "$LIBV/conf/serialbattery/default.ini"
 fi
 

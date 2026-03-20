@@ -9,4 +9,8 @@ if test "$1" == "$adr" ; then
     exit 1
 fi
 
-exec /opt/victronenergy/dbus-serialbattery/dbus-serialbattery.py ${typ}_Ble ${adr}
+ini=/data/conf/serialbattery/${typ}_Ble_${adr}.ini
+if ! test -f "$ini" ; then
+    ini=/data/conf/serialbattery/default.ini
+fi
+exec /opt/victronenergy/dbus-serialbattery/dbus-serialbattery.py -f "$ini" "${typ}_Ble" "$adr"
