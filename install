@@ -262,8 +262,7 @@ gen_user() {
     fln "$SERVICE" "$R/$LIBV/.config/systemd/user"
     fln ".config/systemd/user.control" "$R/$LIBV/service"
 
-    fcat "$R/$LIBV/nginx-fwd.conf" <<_END_
-# XXX TODO this is broken when using native networking
+    fcat "$R/$LIBV/conf/nginx-fwd.conf" <<_END_
 #
 location /$NAME/ {
         proxy_pass http://192.168.42.$SCREEN:80/;
@@ -1225,7 +1224,7 @@ server {
         try_files \$uri \$uri/ =404;
     }
 
-    include /var/lib/venusian/*/nginx-fwd.conf;
+    include /var/lib/venusian/*/conf/nginx-fwd.conf;
 }
 _END_
 fi
