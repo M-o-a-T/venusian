@@ -34,7 +34,7 @@ if true ; then
     rm -f wasm
     mkdir -p "$WWW/gui-v2"
     ln -s "$WWW/gui-v2" wasm
-    unzip $T/venus-webassembly.zip
+    unzip -o $T/venus-webassembly.zip
     cd wasm
     rm -f Makefile
     if [ ! -f "venus-gui-v2.wasm.gz" ]; then
