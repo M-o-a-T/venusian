@@ -144,7 +144,7 @@ packages() {
     test -d "$R/usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
     test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
-    for P in anyio asyncdbus lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml attr outcome trio ; do
+    for P in anyio asyncdbus lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml attr outcome trio aiomqtt zeroconf aiohttp ; do
         test -d "$R/usr/lib/python3/dist-packages/$P" && continue
         if apt-cache show "python3-$P" >/dev/null 2>&1; then
             I="$I python3-$P"
