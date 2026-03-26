@@ -1,5 +1,5 @@
---- /mnt/r/v3.71/opt/victronenergy/dbus-shelly/dbus_shelly.py	2026-03-15 17:32:01.000000000 +0100
-+++ /tmp/dbus_shelly.py	2026-03-16 16:09:51.081586215 +0100
+--- /opt/venus/opt/victronenergy/dbus-shelly/dbus_shelly.py	2026-03-15 17:32:01.000000000 +0100
++++ /opt/victronenergy/dbus-shelly/dbus_shelly.py	2026-03-26 13:17:33.976654435 +0100
 @@ -78,8 +78,8 @@
  
  def main():
@@ -17,8 +17,8 @@
  
 -	mainloop = asyncio.new_event_loop()
 -	asyncio.set_event_loop(mainloop)
-+    async def _main():
-+	    await shellyDiscovery.start()
++	async def _main():
++		await shellyDiscovery.start()
 +		await websockets.serve(Server(lambda: Meter(bus_type)), '', 8000+int(os.environ.get("SCREEN",1)))
  
 -	# This loop should be removed one day.
@@ -32,7 +32,7 @@
 -		mainloop.run_forever()
 -	except KeyboardInterrupt:
 -		mainloop.stop()
-+    asyncio.run(_main())
++	asyncio.run(_main())
  
  
  if __name__ == "__main__":
