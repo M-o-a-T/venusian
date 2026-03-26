@@ -187,6 +187,7 @@ chg() {
 fcat() {
     # check: do we not replace DST?
     DST="$1" ; shift
+    mkdir -p "$(dirname "$DST")"
     if [ -z "$FORCE" ] && [ -f "$DST" ] ; then cat >/dev/null ; return ; fi
     S1=0000
     if [ $# -gt 0 ] && [ -f "$DST" ] ; then
