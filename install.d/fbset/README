@@ -1,1 +1,3 @@
-Install fbset (called from vnc to adjust the frame buffer)
+Install fbset (called from vnc to adjust the frame buffer).
+
+Only used for GUI v1, which frankly you don't want to use any more.

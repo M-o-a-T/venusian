@@ -1,1 +1,3 @@
-Apply dbus-serialbattery patches
+Install dbus-serialbattery and apply its patches.
+
+This also replaces our emscriptened GUI with theirs.

@@ -1,1 +1,8 @@
 Connect to a global FlashMQ server.
+
+The Venusian runs a local flashmq in the user session because flashmq only
+supports one plugin with one dbus connection, and each Venusian user has
+their own dbus.
+
+This plugin installs another flashmq on the host system and tells the
+Venusian's daemon to connect to it.
