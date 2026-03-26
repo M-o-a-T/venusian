@@ -708,7 +708,7 @@ which systemd-nspawn >/dev/null 2>&1 || I="$I systemd-container"
 which rsync >/dev/null 2>&1 || I="$I rsync"
 if test -n "$I" ; then
     $Q echo Locally installing $I
-    apt install $I
+    apt-get install --yes --no-install-recommends $I
 fi
 
 if test -n "$SUB_UPD" ; then
