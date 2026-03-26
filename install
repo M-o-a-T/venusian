@@ -136,6 +136,9 @@ packages() {
     test -s "$R/usr/bin/nc.openbsd" || I="$I netcat-openbsd"
     test -s "$R/usr/bin/socat" || I="$I socat"
     test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
+    test -s "$R/usr/sbin/rfkill" || I="$I rfkill"
+    test -s "$R/usr/bin/flashmq" || I="$I flashmq"
+    test -s "$R/usr/libexec/flashmq/libflashmq-dbus-plugin.so" || I="$I dbus-flashmq"
     test -s "$R/usr/bin/fuse-overlayfs" || I="$I fuse-overlayfs"
     test -s "$R/usr/sbin/nginx" || I="$I nginx"
     test -s "$R/usr/share/doc/php-fpm" || I="$I php-fpm"
@@ -144,7 +147,7 @@ packages() {
     test -d "$R/usr/lib/python3/dist-packages/paho/mqtt" || I="$I python3-paho-mqtt"
     test -d "$R/usr/lib/python3/dist-packages/serial_asyncio" || I="$I python3-serial-asyncio"
 
-    for P in anyio asyncdbus lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml attr outcome trio aiomqtt zeroconf aiohttp ; do
+    for P in anyio asyncdbus lxml dbus pyudev pymodbus dnslib websockets click asyncclick asyncdbus yaml attr outcome trio aiomqtt zeroconf aiohttp cbor2 aioshelly ; do
         test -d "$R/usr/lib/python3/dist-packages/$P" && continue
         if apt-cache show "python3-$P" >/dev/null 2>&1; then
             I="$I python3-$P"
