@@ -28,6 +28,8 @@ fi
 rsync -rEt --inplace "$S"/PageBatteryDbusSerialbattery* "$D"
 rsync -Et --inplace "$S"/PageBattery.qml "$D"/PageBatterySerial.qml
 
+set -x
+
 ## unzip their modified GUI
 if true ; then
     cd /tmp
