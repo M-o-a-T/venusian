@@ -20,8 +20,10 @@ This script install The Venusian onto your computer, or a file system e.g. of a 
         If you use this option without "--install",
         a new user for your existing Venus installation will be created.
 
-    --ext ADDR
-        Use this IP adress for the container. "dyn" uses DHCP.
+    --ext ADDR/BITS
+        Use this IP adress for the container. "dyn" uses DHCP (deprecated, may not work).
+
+        This should be a free IP address in your host's subnet.
 
     --fb
         Use the system's "real" video output.
@@ -47,8 +49,11 @@ This script install The Venusian onto your computer, or a file system e.g. of a 
         The default is "ROOT/opt/venus". A bind-mount will be created if a
         different destination is used.
 
+        This option is deprecated.
+
     --root DIR
         Use this option to install The Venusian onto a mounted Linux file system.
+        Omit this option if you're installing on the currently-running OS.
 
     --verbose
         Print the steps the script executes.
@@ -72,6 +77,8 @@ This script install The Venusian onto your computer, or a file system e.g. of a 
         Use this URL to fetch a sources.list file for additional Debian packages.
         Use "--repo -" to disable.
         The result will be stored in /etc/apt/sources.list.d/venusian.list
+
+        The default is 'https://build.smurf.noris.de/info/smurf.list'.
 
     --repo-key PUBKEYFILE
         Use this URL to fetch the GPG signature file associated with REPO.
@@ -102,8 +109,6 @@ apti() {
       systemd-nspawn -D "$R" apt-get install --yes --no-install-recommends -o Dpkg::Options::="--force-confdef" "$@" </dev/tty >/dev/tty 2>&1
    fi
 }
-
-DEBARCH="$(chr dpkg --print-architecture)"
 
 packages() {
     I=""
@@ -526,8 +531,8 @@ ROOT=/
 FORCE=y
 SUB=()
 SUB_UPD=y
-REPO=http://build.smurf.noris.de/info/smurf.list
-REPOKEY=http://build.smurf.noris.de/info/smurf.archive.gpg
+REPO=https://build.smurf.noris.de/info/smurf.list
+REPOKEY=https://build.smurf.noris.de/info/smurf.archive.gpg
 replace=
 unset NAME DEST MNT img fast FB INST EXT
 
@@ -833,6 +838,8 @@ chr() {
         "$@"
     fi
 }
+
+DEBARCH="$(chr dpkg --print-architecture)"
 
 # create user
 $Q echo Primary set-up
