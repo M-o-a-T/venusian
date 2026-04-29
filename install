@@ -103,10 +103,11 @@ apti() {
    fi
 }
 
+DEBARCH="$(chr dpkg --print-architecture)"
+
 packages() {
     I=""
     PI=""
-    DEBARCH="$(chr dpkg --print-architecture)"
     case "$DEBARCH" in
         (armhf)
             # nothing to do
@@ -135,7 +136,7 @@ packages() {
     test -s "$R/usr/bin/jq" || I="$I jq"
     test -s "$R/usr/bin/nc.openbsd" || I="$I netcat-openbsd"
     test -s "$R/usr/bin/socat" || I="$I socat"
-    test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
+    test $DEBARCH != "amd64" || test -s "$R/usr/bin/bluetoothctl" || I="$I bluez"
     test -s "$R/usr/sbin/rfkill" || I="$I rfkill"
     test -s "$R/usr/bin/flashmq" || I="$I flashmq"
     test -s "$R/usr/libexec/flashmq/libflashmq-dbus-plugin.so" || I="$I dbus-flashmq"
@@ -258,7 +259,7 @@ gen_user() {
 
     chr /sbin/adduser $NAME systemd-journal 2>/dev/null
     chr /sbin/adduser $NAME dialout 2>/dev/null
-    chr /sbin/adduser $NAME bluetooth 2>/dev/null
+    test $DEBARCH != "amd64" || chr /sbin/adduser $NAME bluetooth 2>/dev/null
     test ! -v FB || chr /sbin/adduser $NAME video 2>/dev/null
 
     SC="$LIBV/.config/systemd/user.control"
@@ -1069,6 +1070,10 @@ _END_
         (dbus-fronius) continue ;; # ?
         (dbus-adc) continue ;; # ?
         (dbus-ble-sensors)
+            # missing QEMU support
+            test $DEBARCH == "amd64" || continue
+
+            # BLE needs to access the host network namespace
             echo >>$U AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_ADMIN
             echo >>$U ExecStart=nsenter --net=/run/venusian/%u/initns /opt/victronenergy/dbus-ble-sensors/dbus-ble-sensors
             ;;

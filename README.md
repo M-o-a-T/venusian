@@ -14,6 +14,9 @@ This is of course impossible — but we're doing it anyway.
 **Warning**: After installing The Venusian, running or emulating non-Venus
 ARMHF binaries will no longer work.
 
+**Note**: Due to missing QEMU support, Bluetooth devices are only supported
+on ARM64 systems.
+
 
 ## Rationale
 
@@ -206,6 +209,7 @@ all-zeroes (or 123456789).
 … except for the fact that Bluetooth isn't the most stable way to connect
 a battery. Seriously: use RS485 instead.
 
+Bluetooth only works on ARM64 hosts. See above.
 
 ### Multi-site operation 
 
