@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Usage: $0 USER EXEC ARGS...
+# fake out
+
+shift
+exec "$@"
