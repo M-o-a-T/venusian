@@ -810,6 +810,7 @@ mkdir -p "$R/data"
 mkdir -p "$R/var/volatile"
 mkdir -p "$R/$USRV"/{opt,.opt}
 mkdir -p "$R/$USRV"/{www,.www}
+mkdir -p "$R/$LIBVV"
 
 fcat "$R/data/README" <<'_END_'
 This is the data directory of Venusian clients.
