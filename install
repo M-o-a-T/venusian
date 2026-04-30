@@ -1129,17 +1129,22 @@ _
             echo >>$U ExecStart=/opt/victronenergy/service/$fx/run "%N"
             ;;
     esac
-    echo >>$U "Type=simple"
-    echo >>$U "Restart=always"
-    echo >>$U "RestartSec=10"
-    echo >>$U "EnvironmentFile=-/etc/venusian/vars"
-    echo >>$U "EnvironmentFile=-/etc/venusian/%u/vars"
-    echo >>$U "EnvironmentFile=-/etc/venusian/%u/%N"
-    echo >>$U "EnvironmentFile=-/run/user/%U/vars"
-    echo >>$U "EnvironmentFile=-/run/user/%U/%N"
+    cat >>$U <<_END_
+Type=simple
+Restart=always
+RestartSec=10
+EnvironmentFile=-/etc/venusian/vars
+EnvironmentFile=-/etc/venusian/%u/vars
+EnvironmentFile=-/etc/venusian/%u/%N
+EnvironmentFile=-/run/user/%U/vars
+EnvironmentFile=-/run/user/%U/%N
+
+[Unit]
+Requires=dbus.service
+After=dbus.service
+_END_
+
     if [ "$fx" != "localsettings" ] ; then
-        echo >>$U ""
-        echo >>$U "[Unit]"
         echo >>$U "Requires=localsettings.service"
         echo >>$U "After=localsettings.service"
     fi
