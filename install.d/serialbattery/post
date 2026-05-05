@@ -11,7 +11,7 @@ EnvironmentFile=-/etc/venusian/%u/%N
 EnvironmentFile=-/run/user/%U/vars
 EnvironmentFile=-/run/user/%U/%N
 
-ExecStart=/opt/victronenergy/dbus-serialbattery/dbus-serialbattery.py %i
+ExecStart=/opt/victronenergy/dbus-serialbattery/dbus-serialbattery.py /dev/%i
 [Unit]
 Requires=localsettings.service
 After=localsettings.service
