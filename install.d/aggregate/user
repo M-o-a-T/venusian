@@ -2,3 +2,10 @@ if test ! -s "$LIBV/conf/dbus-aggregate-batteries.ini" ; then
     cp -a "$HERE/ext/dbus-aggregate-batteries/dbus-aggregate-batteries/config.default.ini" "$LIBV/conf/dbus-aggregate-batteries.ini"
 fi
 
+DST=$LIBV/apps/dbus-aggregate-batteries
+mkdir -p $DST
+
+for f in charge last_balancing ; do
+    test -s $DST/storedvalue_$f || cp $HERE/ext/dbus-aggregate-batteries/$f $DST/storedvalue_$f
+done
+

@@ -16,4 +16,3 @@ ExecStart=/opt/victronenergy/dbus-aggregate-batteries/dbus-aggregate-batteries.p
 Requires=localsettings.service
 After=localsettings.service
 _END_
-
