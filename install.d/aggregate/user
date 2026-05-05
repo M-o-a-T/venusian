@@ -1,0 +1,4 @@
+if test ! -s "$LIBV/conf/dbus-aggregate-batteries.ini" ; then
+    cp -a "$HERE/ext/dbus-aggregate-batteries/dbus-aggregate-batteries/config.default.ini" "$LIBV/conf/dbus-aggregate-batteries.ini"
+fi
+

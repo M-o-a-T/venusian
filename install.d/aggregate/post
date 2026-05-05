@@ -1,0 +1,19 @@
+rsync -ap --inplace "$HERE/ext/dbus-aggregate-batteries/dbus-aggregate-batteries" "$OPTVIC/"
+
+fcat "$SERVICE/aggregate@.service" <<_END_
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+EnvironmentFile=-/etc/venusian/vars
+EnvironmentFile=-/etc/venusian/%u/vars
+EnvironmentFile=-/etc/venusian/%u/%N
+EnvironmentFile=-/run/user/%U/vars
+EnvironmentFile=-/run/user/%U/%N
+
+ExecStart=/opt/victronenergy/dbus-aggregate-batteries/dbus-aggregate-batteries.py %i
+[Unit]
+Requires=localsettings.service
+After=localsettings.service
+_END_
+
