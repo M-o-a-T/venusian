@@ -13,3 +13,6 @@
 [submodule "ext/dbus-modbus-client"]
 	path = ext/dbus-modbus-client
 	url = https://github.com/M-o-a-T/dbus-modbus-client.git
+[submodule "ext/dbus-aggregate-batteries"]
+	path = ext/dbus-aggregate-batteries
+	url = https://github.com/M-o-a-T/dbus-aggregate-batteries.git
