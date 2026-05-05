@@ -78,6 +78,7 @@ def main(config, user, verbose):
 
     The configuration has the form::
 
+    \b
         dbus:
         - match:
             key1: pattern
