@@ -113,22 +113,15 @@ apti() {
 packages() {
     I=""
     PI=""
-    case "$DEBARCH" in
-        (armhf)
-            # nothing to do
-            ;;
-        (*)
-            PAGESIZE=$(getconf PAGE_SIZE)
-            if [ "$DEBARCH" = "arm64" ] && [ "$PAGESIZE" -eq 4096 ]; then
-                # 64-bit arm host with 4 KB pages → native armhf should work
-                # if CONFIG_COMPAT=y is set in the kernel
-                :
-            else
-                test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
-                test -s "$R/usr/share/binfmts/qemu-arm" || test -s "$R/usr/lib/binfmt.d/qemu-arm.conf" || I="$I qemu-user-binfmt"
-            fi
-            ;;
-    esac
+    PAGESIZE=$(getconf PAGE_SIZE)
+    if [ "$DEBARCH" = "arm64" ] && [ "$PAGESIZE" -eq 4096 ]; then
+        # 64-bit arm host with 4 KB pages → native armhf should work
+        # if CONFIG_COMPAT=y is set in the kernel
+        :
+    else
+        test -s "$R/usr/bin/qemu-arm" || I="$I qemu-user"
+        test -s "$R/usr/share/binfmts/qemu-arm" || test -s "$R/usr/lib/binfmt.d/qemu-arm.conf" || I="$I qemu-user-binfmt"
+    fi
 
     PP=
     test -d "/usr/lib/python3/dist-packages/bcrypt" || PP="$PP python3-bcrypt"
@@ -802,6 +795,10 @@ if dpkg --compare-versions $V lt $V1 || dpkg --compare-versions $V gt $V2 ; then
     echo "This script only works with Venus $V1 to $V2." >&2
     exit 1
 fi
+if ! file "$DEST"/bin/busybox.nosuid | grep -qs armhf ; then
+    echo "This is not an ARMHF image! You need the raspberrypi2 version." >&2
+    exit 1
+fi
 if test -f "$R" ; then
     echo "TODO  Installing on an image is not implemented." >&2
     echo "TODO  You need to loopback-mount it manually." >&2
@@ -840,7 +837,12 @@ chr() {
     fi
 }
 
+# host architecture
 DEBARCH="$(chr dpkg --print-architecture)"
+if [ "$DEBARCH" = "armhf" ] ; then
+    echo "You cannot run The Venusian on a 32-bit ARM system." >&2
+    exit 1
+fi
 
 # create user
 $Q echo Primary set-up
