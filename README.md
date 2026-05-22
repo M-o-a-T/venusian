@@ -14,8 +14,9 @@ This is of course impossible — but we're doing it anyway.
 **Warning**: After installing The Venusian, running or emulating non-Venus
 ARMHF binaries will no longer work.
 
-**Note**: Due to missing QEMU support, Bluetooth devices are only supported
-on ARM64 systems.
+**Note**: Due to missing QEMU support, some Bluetooth devices will only
+work on ARM64 systems. `dbus-serialbattery` and other Python-based programs
+are not affected.
 
 
 ## Rationale
@@ -233,14 +234,14 @@ port 1883. The workaround is to teach the latter to also listen on port
 
 ## Installation
 
-The `install` script copies a current Venus image to a subvolume or
-subdirectory of the host system.
+The `install` script copies a current 32-bit Venus image (tested with
+raspberrypi2) to a subvolume or subdirectory of the host system.
 
-The script accepts a couple of arguments. `dir`, `root` and `mount` are
-mandatory. You need to run it as root.
+The script accepts a couple of arguments; see below, and/or use `--help`
+for details. It needs to run as root.
 
-The Venus installation will be copied to the host system as-is. It won't
-be modified.
+The file system on the Venus image will be extracted and copied to the host
+system as-is. It won't be modified.
 
 
 ### --image=/path/to/venus.img
@@ -249,7 +250,7 @@ The Venus image to use. Skip this option if you already unpacked or mounted
 your Venus image.
 
 The file may be gzip-compressed; in this case you'll need sufficient space
-in /tmp for an uncompressed copy.
+in /var/tmp for an uncompressed copy.
 
 The special value `--image=-web-` downloads the current Venus version.
 The image will be deleted after it's unpacked.
